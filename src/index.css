@@ -66,3 +66,12 @@
     @apply bg-background text-foreground;
   }
 }
+.scroll-hidden {
+  overflow-x: auto; /* or overflow: auto for both axes */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+}
+
+.scroll-hidden::-webkit-scrollbar {
+  display: none; /* WebKit (Chrome, Safari, Edge) */
+}

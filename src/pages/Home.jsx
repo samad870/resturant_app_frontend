@@ -1,13 +1,19 @@
-import Header from "../components/Client/Header";
+import SearchItem from "..//components/Client/SearchItem";
+import Filter from "@/components/Client/Filter";
+import OfferSlider from "@/components/Client/OfferSlider";
+import Category from "@/components/Client/Category";
+import OrderComplete from "@/components/Client/OrderComplete";
+import FoodListing from "@/components/Client/FoodListing";
 
 export default function Home() {
   return (
     <>
-      <Header />
-      <h1 className="text-center text-red-600 font-bold text-4xl">
-        Tap N Orders
-      </h1>
-      <h2 className="text-center text-3xl font-bold underline">Client</h2>
+      <SearchItem />
+      <Filter />
+      <OfferSlider />
+      <Category />
+      <OrderComplete />
+      <FoodListing />
     </>
   );
 }
