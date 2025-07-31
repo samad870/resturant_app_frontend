@@ -1,10 +1,13 @@
+import AdminLayout from "@/layouts/AdminLayout";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AddItems from "@/components/admin/AddItems";
+
 export default function Home() {
   return (
-    <>
-      <h1 className="text-center text-red-600 font-bold text-4xl">
-        Tap N Order
-      </h1>
-      <h2 className="text-center text-3xl font-bold underline">Admin Page</h2>
-    </>
+      <Routes>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="additems" element={<AddItems />} />
+        </Route>
+      </Routes>
   );
 }
