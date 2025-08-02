@@ -4,10 +4,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 
 import Home from "./pages/Home";
-import Admin from "./pages/Admin";
+// import Admin from "./pages/Admin";
 import SuperAdmin from "./pages/SuperAdmin";
-import AdminLayout from "./layouts/AdminLayout";
+// import Admin from "./pages/Admin";
 import "./index.css";
+import AddItems from "./components/admin/AddItems";
+import Admin from "./pages/Admin";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -16,8 +18,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
         </Route>
-        <Route path="admin" element={<AdminLayout />}>
-          <Route index element={<Admin />} />       
+        <Route path="admin" element={<Admin />}>
+          {/* <Route index element={<Admin />} />        */}
         </Route>
         <Route path="super-admin" element={<SuperAdmin />} />
       </Routes>

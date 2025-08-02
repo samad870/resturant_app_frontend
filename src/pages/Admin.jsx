@@ -1,14 +1,13 @@
-import AdminLayout from "@/layouts/AdminLayout";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AddItems from "@/components/admin/AddItems";
+import React from 'react'
+import AdminHome from './AdminHome'
 
-export default function Home() {
+const Admin = () => {
   return (
-      <Routes>
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route path="additems" element={<AddItems />} />
-        </Route>
-        {/* iwiwhdiw */}
-      </Routes>
-  );
+  <>
+  <AdminHome/>
+  
+  </>
+  )
 }
+
+export default Admin
