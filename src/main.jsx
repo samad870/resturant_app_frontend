@@ -19,7 +19,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route index element={<Home />} />
         </Route>
         <Route path="admin" element={<Admin />}>
-          {/* <Route index element={<Admin />} />        */}
         </Route>
         <Route path="super-admin" element={<SuperAdmin />} />
       </Routes>

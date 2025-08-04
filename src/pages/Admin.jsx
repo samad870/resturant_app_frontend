@@ -5,7 +5,6 @@ const Admin = () => {
   return (
   <>
   <AdminHome/>
-  
   </>
   )
 }
