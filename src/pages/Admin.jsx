@@ -1,16 +1,18 @@
-import React from 'react'
-import AdminHome from './AdminHome'
-// import AddItems from '@/components/admin/AddItems'
-// import { BrowserRouter, Routes, Route } from "react-router-dom";
+import SearchItem from "..//components/Client/SearchItem";
+import Filter from "@/components/Client/Filter";
+import OfferSlider from "@/components/Client/OfferSlider";
+import Category from "@/components/Client/Category";
+import OrderComplete from "@/components/Client/OrderComplete";
+import FoodListing from "@/components/Client/FoodListing";
+import Listitem from "@/components/admin/Listitem";
 
-
-const Admin = () => {
+export default function Admin() {
   return (
-  <>
-  <AdminHome/>
-   
-  </>
-  )
-}
+    <>
+      {/* <div className="mx-auto bg-gray-50 min-h-screen font-mostrate font-semibold"> */}
+        <Listitem />
 
-export default Admin
+      {/* </div> */}
+    </>
+  );
+}

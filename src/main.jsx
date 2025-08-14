@@ -8,9 +8,10 @@ import Home from "./pages/Home";
 import SuperAdmin from "./pages/SuperAdmin";
 // import Admin from "./pages/Admin";
 import "./index.css";
-import AddItems from "./components/admin/MenuItemForm";
+import AddItems from "./components/admin/AddItems";
 import Admin from "./pages/Admin";
 import Listitem from "./components/admin/Listitem";
+import AdminLayout from "./layouts/AdminLayout";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -19,11 +20,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
         </Route>
-        <Route path="admin" element={<Admin />}>        
+        <Route path="admin" element={<AdminLayout />}>
+        <Route index element={<Admin />} />
+        <Route path="listItem" element={<Listitem/>} />
+        <Route path="addItems" element={<AddItems/>}/>
+        {/* <Route path="add-product" element={<AddItems/>}/> */}
         </Route>
-          <Route path="/items" element={<AddItems />} />
-          <Route path="/listitem" element={<Listitem />} />
-
 
         <Route path="super-admin" element={<SuperAdmin />} />
       </Routes>
