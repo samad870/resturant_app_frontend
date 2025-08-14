@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Link } from "react-router-dom"
 import logo from "@/assets/tapNOrder.webp"; // Add your logo image here (PNG/WebP/SVG)
-import AddItems from "./AddItems"
+// import AddItems from "./AddItems"
 
 
 const data = {
@@ -66,7 +66,7 @@ const data = {
       items: [
         {
           title: "Add Item",
-          url: "additems",
+          url: "/admin/item",
         },
         {
           title: "Item List",
@@ -193,6 +193,7 @@ export function AppSidebar({
       <SidebarFooter>
         <NavUser user={data.user} />
       </SidebarFooter>
+     
     </Sidebar>
   );
 }
