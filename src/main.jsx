@@ -4,10 +4,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 
 import Home from "./pages/Home";
-import Admin from "./pages/Admin";
+// import Admin from "./pages/Admin";
 import SuperAdmin from "./pages/SuperAdmin";
-import AdminLayout from "./layouts/AdminLayout";
+// import Admin from "./pages/Admin";
 import "./index.css";
+import AddItems from "./components/admin/AddItems";
+import Admin from "./pages/Admin";
+import Listitem from "./components/admin/Listitem";
+import AdminLayout from "./layouts/AdminLayout";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -17,8 +21,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route index element={<Home />} />
         </Route>
         <Route path="admin" element={<AdminLayout />}>
-          <Route index element={<Admin />} />       
+        <Route index element={<Admin />} />
+        <Route path="listItem" element={<Listitem/>} />
+        <Route path="addItems" element={<AddItems/>}/>
+        {/* <Route path="add-product" element={<AddItems/>}/> */}
         </Route>
+
         <Route path="super-admin" element={<SuperAdmin />} />
       </Routes>
     </BrowserRouter>

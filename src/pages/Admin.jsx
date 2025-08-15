@@ -1,13 +1,18 @@
-import AdminLayout from "@/layouts/AdminLayout";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AddItems from "@/components/admin/AddItems";
+import SearchItem from "..//components/Client/SearchItem";
+import Filter from "@/components/Client/Filter";
+import OfferSlider from "@/components/Client/OfferSlider";
+import Category from "@/components/Client/Category";
+import OrderComplete from "@/components/Client/OrderComplete";
+import FoodListing from "@/components/Client/FoodListing";
+import Listitem from "@/components/admin/Listitem";
 
-export default function Home() {
+export default function Admin() {
   return (
-      <Routes>
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route path="additems" element={<AddItems />} />
-        </Route>
-      </Routes>
+    <>
+      {/* <div className="mx-auto bg-gray-50 min-h-screen font-mostrate font-semibold"> */}
+        <Listitem />
+
+      {/* </div> */}
+    </>
   );
 }

@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Link } from "react-router-dom"
 import logo from "@/assets/tapNOrder.webp"; // Add your logo image here (PNG/WebP/SVG)
-import AddItems from "./AddItems"
+// import AddItems from "./AddItems"
 
 
 const data = {
@@ -40,42 +40,40 @@ const data = {
   },
   navMain: [
     {
-      title: "ORDER",
+      title: "Order Management",
       url: "#",
       icon: ScrollText,
       isActive: true,
       items: [
         {
-          title: "Order List",
+          title: "Orders",
           url: "#",
         },
-        // {
-        //   title: "Starred",
-        //   url: "#",
-        // },
-        // {
-        //   title: "Settings",
-        //   url: "#",
-        // },
+        {
+          title: "Pending Order",
+          url: "#",
+        },
+
+        {
+          title: "Delivered",
+          url: "#",
+        },
       ],
     },
     {
-      title: "Menu",
+      title: "Item Management",
       url: "#",
-      icon: SquareMenu  ,
+      icon: SquareMenu,
+      isActive: true,
       items: [
         {
           title: "Add Item",
-          url: "additems",
+          url: "/admin/addItems",
         },
         {
           title: "Item List",
-          url: "#",
+          url: "/admin/listItem",
         },
-        // {
-        //   title: "Quantum",
-        //   url: "#",
-        // },
       ],
     },
     // {
@@ -167,7 +165,7 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild className="mt-9">
-             {/* <a href="#">
+              {/* <a href="#">
                 <div
                   className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground ">
                   <Command className="size-4" />
@@ -177,10 +175,10 @@ export function AppSidebar({
                   <span className="truncate text-xs">Enterprise</span>
                 </div>
               </a> */}
-          <Link to="/admin">
-                  <img src={logo} alt="Logo" className="h-12 w-auto " />
-                </Link>
-                
+              <Link to="/admin">
+                <img src={logo} alt="Logo" className="h-12 w-auto " />
+              </Link>
+
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -193,6 +191,7 @@ export function AppSidebar({
       <SidebarFooter>
         <NavUser user={data.user} />
       </SidebarFooter>
+
     </Sidebar>
   );
 }
