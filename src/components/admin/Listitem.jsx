@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import {
   Table,
@@ -8,106 +7,135 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 
 const Listitem = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
 
-  const API_URL = "http://localhost:4000/api/menu/";
+  const API_URL = "https://restaurant-app-backend-mihf.onrender.com/api/menu";
 
+  // Fetch data
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(API_URL);
-        if (!res.ok) throw new Error("Failed to fetch data");
-        const data = await res.json();
-        setItems(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error("Failed to fetch data");
+      const data = await res.json();
+      setItems(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Delete item
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this item?")) return;
+    try {
+      const res = await fetch(`${API_URL}/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      setItems(items.filter((item) => item._id !== id));
+    } catch (err) {
+      alert(err.message);
+      console.log(err.message);
+    }
+  };
+
+  // ✅ Update item
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_URL}/${editingItem._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingItem),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      const updated = await res.json();
+
+      setItems(items.map((i) => (i._id === updated._id ? updated : i)));
+      setEditingItem(null);
+    } catch (err) {
+      alert(err.message);
+      console.log(err.message);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-4">
       <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Product List
-          </h2>
-          <p className="text-sm text-gray-500">
-            Showing {items.length} products
-          </p>
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800">Product List</h2>
+            <p className="text-sm text-gray-500">
+              Showing {items.length} products
+            </p>
+          </div>
         </div>
 
-        {/* Desktop Table */}
+        {/* Table */}
         <div className="hidden md:block overflow-x-auto">
           <Table className="w-full">
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <TableHead className="w-[80px]">SL.NO</TableHead>
+                <TableHead>SL.NO</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Image</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan="5" className="text-center py-6">
-                    <span className="text-gray-500">Loading...</span>
+                  <TableCell colSpan="6" className="text-center py-6">
+                    Loading...
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell
-                    colSpan="5"
-                    className="text-center text-red-500 py-6"
-                  >
+                  <TableCell colSpan="6" className="text-center text-red-500 py-6">
                     {error}
                   </TableCell>
                 </TableRow>
               ) : (
                 items.map((item, index) => (
-                  <TableRow
-                    key={item.id}
-                    className="hover:bg-gray-50 transition"
-                  >
-                    <TableCell className="font-medium">
-                      {index + 1}
-                    </TableCell>
-                    <TableCell className="truncate max-w-[150px]">
-                      {item.name}
-                    </TableCell>
+                  <TableRow key={item._id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{item.name}</TableCell>
                     <TableCell>
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="w-12 h-12 object-cover rounded"
+                        className="w-12 h-12 rounded object-cover"
                       />
                     </TableCell>
-                    <TableCell className="capitalize">
-                      {item.category}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold text-green-600">
-                      ${item.price}
+                    <TableCell>{item.category}</TableCell>
+                    <TableCell className="text-right">${item.price}</TableCell>
+                    <TableCell className="flex gap-2">
+                      <button
+                        onClick={() => setEditingItem(item)}
+                        className="px-2 py-1 text-sm bg-blue-500 text-white rounded"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item._id)}
+                        className="px-2 py-1 text-sm bg-red-500 text-white rounded"
+                      >
+                        Delete
+                      </button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -116,56 +144,58 @@ const Listitem = () => {
           </Table>
         </div>
 
-        {/* Mobile Card View */}
-        <div className="block md:hidden">
-          {loading ? (
-            <p className="text-center py-6 text-gray-500">Loading...</p>
-          ) : error ? (
-            <p className="text-center py-6 text-red-500">{error}</p>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 p-4">
-              {items.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="bg-white border rounded-lg shadow-sm p-4 flex gap-4 items-center"
-                >
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-16 h-16 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-500">
-                      #{index + 1} • {item.category}
-                    </p>
-                    <h3 className="font-semibold text-gray-800">{item.name}</h3>
-                    <p className="text-green-600 font-bold">${item.price}</p>
-                  </div>
+        {/* Edit Modal */}
+        {editingItem && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+            <div className="bg-white p-6 rounded shadow-lg w-[400px]">
+              <h3 className="text-lg font-semibold mb-4">Edit Item</h3>
+              <form onSubmit={handleUpdate} className="space-y-3">
+                <input
+                  type="text"
+                  value={editingItem.name}
+                  onChange={(e) =>
+                    setEditingItem({ ...editingItem, name: e.target.value })
+                  }
+                  className="w-full border p-2 rounded"
+                  placeholder="Name"
+                />
+                <input
+                  type="text"
+                  value={editingItem.category}
+                  onChange={(e) =>
+                    setEditingItem({ ...editingItem, category: e.target.value })
+                  }
+                  className="w-full border p-2 rounded"
+                  placeholder="Category"
+                />
+                <input
+                  type="number"
+                  value={editingItem.price}
+                  onChange={(e) =>
+                    setEditingItem({ ...editingItem, price: e.target.value })
+                  }
+                  className="w-full border p-2 rounded"
+                  placeholder="Price"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingItem(null)}
+                    className="px-3 py-1 bg-gray-400 text-white rounded"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-3 py-1 bg-green-600 text-white rounded"
+                  >
+                    Save
+                  </button>
                 </div>
-              ))}
+              </form>
             </div>
-          )}
-        </div>
-
-        {/* Pagination */}
-        <div className="p-4 flex justify-center">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious href="#" />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">1</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationEllipsis />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext href="#" />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
