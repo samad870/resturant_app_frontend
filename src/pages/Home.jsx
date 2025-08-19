@@ -1,19 +1,22 @@
+"use client";
+
 import { useState } from "react";
 import { useMenu } from "../hooks/useMenu";
 import Header from "@/components/Client/Header";
-import SearchItem from "..//components/Client/SearchItem";
+import SearchItem from "@/components/Client/SearchItem";
 import Filter from "@/components/Client/Filter";
 import OfferSlider from "@/components/Client/OfferSlider";
 import Category from "@/components/Client/Category";
 import OrderComplete from "@/components/Client/OrderComplete";
 import FoodListing from "@/components/Client/FoodListing";
-import HelperData from "@/components/Client/HelperData";
+// import HelperData from "@/components/Client/HelperData";
 
 export default function Home() {
   const { data, loading, error } = useMenu();
   const [filters, setFilters] = useState({ veg: false, nonVeg: false });
   const [search, setSearch] = useState("");
   const [total, setTotal] = useState(0);
+  const [cartItems, setCartItems] = useState([]); //track cart items
 
   if (loading) return <p>Loading menu...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -47,18 +50,17 @@ export default function Home() {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
-
+  // when FoodListing updates quantities → update cartItems
+  const handleCartChange = (items) => {
+    setCartItems(items);
+  };
   return (
     <>
-      <Header
-        logo={restaurant?.logo?.url}
-        siteName={restaurant?.name}
-        cartCount={3}
-      />
-      <HelperData />
+      <Header logo={restaurant?.logo?.url} siteName={restaurant?.name} />
+      {/* <HelperData /> */}
       <SearchItem search={search} onSearch={setSearch} />
-      <Filter filters={filters} onChange={handleFilterChange} />
       <OfferSlider />
+      <Filter filters={filters} onChange={handleFilterChange} />
       <Category
         title="Food Categories"
         categories={menu}

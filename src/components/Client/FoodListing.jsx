@@ -14,7 +14,7 @@ const groupByCategory = (items) => {
 };
 
 export default function FoodListing({ menu, onQuantityChange }) {
-  // 👈 accept callback
+  // accept callback
   const groupedMenu = groupByCategory(menu);
   const [quantities, setQuantities] = useState(
     menu.reduce((acc, item) => {
@@ -27,14 +27,14 @@ export default function FoodListing({ menu, onQuantityChange }) {
     setQuantities((prev) => {
       const updated = { ...prev, [id]: newQty };
 
-      // ✅ calculate subtotal for all items
+      // calculate subtotal for all items
       const total = menu.reduce(
         (acc, item) => acc + item.price * (updated[item._id] || 0),
         0
       );
 
       if (onQuantityChange) {
-        onQuantityChange(total); // 👈 send total back to Home
+        onQuantityChange(total); // send total back to Home
       }
 
       return updated;
@@ -48,13 +48,11 @@ export default function FoodListing({ menu, onQuantityChange }) {
     <div className="my-4 flex flex-col pb-20">
       {Object.keys(groupedMenu).map((category) => (
         <div key={category} id={`category-${category}`} className="mb-6">
-          {/* Category Heading */}
           <div className="flex items-center gap-2 font-normal mb-2">
             <Dot className="text-primary" size={12} strokeWidth={24} />
             <span className="text-lg font-bold">{category}</span>
           </div>
 
-          {/* Items under this category */}
           {groupedMenu[category].map((item) => (
             <div key={item._id} className="py-2 mr-2">
               <div className="border rounded-lg flex gap-1">
@@ -67,7 +65,6 @@ export default function FoodListing({ menu, onQuantityChange }) {
                 </div>
                 <div className="p-2 text-xs font-light flex flex-col justify-between flex-1">
                   <div className="flex items-center gap-1">
-                    {/* ✅ Show green for veg, red for non-veg */}
                     {item.type === "veg" ? (
                       <Dot
                         size={18}
