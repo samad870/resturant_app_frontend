@@ -1,17 +1,17 @@
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 
-export default function SearchItem() {
+export default function SearchItem({ search, onSearch }) {
   return (
-    <>
-      <div className="relative">
-        <Input
-          type="text"
-          placeholder="Search"
-          className="bg-white rounded-2xl px-4 shadow-sm py-6 text-[16px] font-light pl-12"
-        />
-        <Search className="absolute left-3 top-2 w-fit h-8 text-gray-300 z-10" />
-      </div>
-    </>
+    <div className="relative">
+      <Input
+        type="text"
+        placeholder="Search"
+        value={search}
+        onChange={(e) => onSearch(e.target.value)}
+        className="bg-white rounded-2xl px-4 shadow-sm py-6 text-[16px] font-light pl-12 outline-none border-none"
+      />
+      <Search className="absolute left-3 top-2 w-fit h-8 text-gray-300 z-10" />
+    </div>
   );
 }

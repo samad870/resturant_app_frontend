@@ -14,21 +14,21 @@ import Listitem from "./components/admin/Listitem";
 import AdminLayout from "./layouts/AdminLayout";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Home />} />
-        </Route>
-        <Route path="admin" element={<AdminLayout />}>
+  // <React.StrictMode>
+  <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<MainLayout />}>
+        <Route index element={<Home />} />
+      </Route>
+      <Route path="admin" element={<AdminLayout />}>
         <Route index element={<Admin />} />
-        <Route path="listItem" element={<Listitem/>} />
-        <Route path="addItems" element={<AddItems/>}/>
+        <Route path="listItem" element={<Listitem />} />
+        <Route path="addItems" element={<AddItems />} />
         {/* <Route path="add-product" element={<AddItems/>}/> */}
-        </Route>
+      </Route>
 
-        <Route path="super-admin" element={<SuperAdmin />} />
-      </Routes>
-    </BrowserRouter>
-  </React.StrictMode>
+      <Route path="super-admin" element={<SuperAdmin />} />
+    </Routes>
+  </BrowserRouter>
+  // </React.StrictMode>
 );
