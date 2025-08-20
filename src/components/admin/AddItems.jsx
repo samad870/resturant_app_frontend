@@ -23,7 +23,7 @@ const ProductForm = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:4000/api/menu/", {
+      const res = await fetch("https://restaurant-app-backend-mihf.onrender.com/api/menu/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
