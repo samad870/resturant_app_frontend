@@ -8,7 +8,7 @@ export default function Filter({ filters, onChange }) {
         Filter
         <SlidersHorizontal size={20} strokeWidth={3} />
       </div>
-      <div className="flex items-center gap-4 font-thin">
+      <div className="flex items-center gap-4 font-normal">
         <div className="flex items-center gap-1">
           Veg
           <Checkbox
