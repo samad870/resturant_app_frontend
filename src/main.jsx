@@ -12,23 +12,27 @@ import AddItems from "./components/admin/AddItems";
 import Admin from "./pages/Admin";
 import Listitem from "./components/admin/Listitem";
 import AdminLayout from "./layouts/AdminLayout";
+import { Provider } from "react-redux";
+import { store } from "./store.js";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  // <React.StrictMode>
+  <Provider store={store}>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
         </Route>
         <Route path="admin" element={<AdminLayout />}>
-        <Route index element={<Admin />} />
-        <Route path="listItem" element={<Listitem/>} />
-        <Route path="addItems" element={<AddItems/>}/>
-        {/* <Route path="add-product" element={<AddItems/>}/> */}
+          <Route index element={<Admin />} />
+          <Route path="listItem" element={<Listitem />} />
+          <Route path="addItems" element={<AddItems />} />
+          {/* <Route path="add-product" element={<AddItems/>}/> */}
         </Route>
 
         <Route path="super-admin" element={<SuperAdmin />} />
       </Routes>
     </BrowserRouter>
-  </React.StrictMode>
+  </Provider>
+  // </React.StrictMode>
 );
