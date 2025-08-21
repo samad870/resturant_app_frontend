@@ -46,8 +46,8 @@ const data = {
       isActive: true,
       items: [
         {
-          title: "Orders",
-          url: "#",
+          title: "Orders List",
+          url: "/admin/orderlist",
         },
         {
           title: "Pending Order",
