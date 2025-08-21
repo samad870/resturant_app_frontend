@@ -1,106 +1,7 @@
-// import React, { useEffect, useState } from "react";
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from "@/components/ui/table";
-
-// const OrderList = () => {
-//   const [orders, setOrders] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
- 
-//   const API_URL = "https://restaurant-app-backend-mihf.onrender.com/api/order";
-
-//   useEffect(() => {
-//     fetchOrders();
-//   }, []);
-
-//   const fetchOrders = async () => {
-//     try {
-//       const res = await fetch(API_URL);
-//       if (!res.ok) throw new Error("Failed to fetch orders");
-//       const data = await res.json();
-//       setOrders(data);
-//     } catch (err) {
-//       setError(err.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-//  console.log(orders)
-//   return (
-//     <div className="min-h-screen">
-//       <div className="max-w-screen-2xl mx-auto bg-white overflow-hidden">
-//         <div className="px-6 py-4 border-b border-gray-200 text-center">
-//           <h2 className="text-xl font-semibold text-gray-800">Order List</h2>
-//           <p className="text-sm text-gray-500">
-//             Showing {orders.length} Order{orders.length !== 1 && "s"}
-//           </p>
-//         </div>
-
-//         <div className="overflow-x-auto">
-//           <Table className="w-full min-w-[800px]">
-//             <TableHeader>
-//               <TableRow className="bg-gray-50">
-//                 <TableHead>SL.NO</TableHead>
-//                 <TableHead>Table ID</TableHead>
-//                 <TableHead>Status</TableHead>
-//                 <TableHead>Items</TableHead>
-//                 <TableHead>Created At</TableHead>
-//               </TableRow>
-//             </TableHeader>
-//             <TableBody>
-//               {loading ? (
-//                 <TableRow>
-//                   <TableCell colSpan="5" className="text-center py-6">
-//                     Loading...
-//                   </TableCell>
-//                 </TableRow>
-//               ) : error ? (
-//                 <TableRow>
-//                   <TableCell colSpan="5" className="text-center text-red-500 py-6">
-//                     {error}
-//                   </TableCell>
-//                 </TableRow>
-//               ) : (
-//                 orders.map((order, index) => (
-//                   <TableRow key={order._id}>
-//                     <TableCell>{index + 1}</TableCell>
-//                     <TableCell>{order.tableId}</TableCell>
-//                     <TableCell className="capitalize">{order.status}</TableCell>
-//                     <TableCell>
-//                       <ul className="list-disc list-inside">
-//                         {order.items.map((item, idx) => (
-//                           <li key={idx} className="list-decimal">
-//                             {item.menuItem?.name || "Unknown"} × {item.quantity}
-//                           </li>
-//                         ))}
-//                       </ul>
-//                     </TableCell>
-//                     <TableCell>
-//                       {new Date(order.createdAt).toLocaleString()}
-//                     </TableCell>
-//                   </TableRow>
-//                 ))
-//               )}
-//             </TableBody>
-//           </Table>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default OrderList;
-
 
 import React, { useEffect, useState } from "react";
 
-const OrderList = () => {
+const OrdersList = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -275,4 +176,4 @@ const OrderList = () => {
   );
 };
 
-export default OrderList;
+export default OrdersList;
