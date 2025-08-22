@@ -1,10 +1,16 @@
 import { SlidersHorizontal } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useNavigate } from "react-router-dom";
 
 export default function Filter({ filters, onChange }) {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+  navigate("/admin")  
+  }
   return (
     <div className="my-4 flex items-center justify-between gap-2">
-      <div className="bg-primary text-white p-2 w-fit rounded-3xl px-4 flex items-center gap-2 shadow-md">
+      <div onClick={handleClick} className="bg-primary text-white p-2 w-fit rounded-3xl px-4 flex items-center gap-2 shadow-md">
         Filter
         <SlidersHorizontal size={20} strokeWidth={3} />
       </div>
