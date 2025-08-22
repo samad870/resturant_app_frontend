@@ -18,6 +18,7 @@ import { Provider } from "react-redux";
 import { store } from "./store";
 // import OrderList from "./components/admin/OrdersList";
 import OrdersList from "./components/admin/OrdersList";
+import Filter from "./components/Client/Filter";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   // <React.StrictMode>
@@ -26,6 +27,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
+          <Route path="filter" element={<Filter />} />
         </Route>
         <Route path="admin" element={<AdminLayout />}>
           <Route index element={<Admin />} />
