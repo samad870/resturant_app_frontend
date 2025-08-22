@@ -58,7 +58,7 @@ const ProductForm = () => {
 
       if (!res.ok) throw new Error("Failed to add product");
 
-      alert("✅ Product added successfully");
+      alert("✅ Product added successfully.");
 
       setFormData({
         name: "",
