@@ -11,12 +11,12 @@ import "./index.css";
 import AddItems from "./components/admin/AddItems";
 import Admin from "./pages/Admin";
 // import Listitem from "./components/admin/Listitems";
-import Listitem from "./components/admin/ListItems.jsx";
+// import Listitem from "./components/admin/ListItems.jsx";
 import AdminLayout from "./layouts/AdminLayout";
 import Listitems from "./components/admin/ListItems.jsx";
 import { Provider } from "react-redux";
 import { store } from "./store";
-import OrderList from "./components/admin/OrdersList";
+// import OrderList from "./components/admin/OrdersList";
 import OrdersList from "./components/admin/OrdersList";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
