@@ -7,7 +7,7 @@ const ImageUploader = ({ onImageSelect }) => {
     const file = e.target.files?.[0];
     if (file) {
       setPreview(URL.createObjectURL(file));
-      onImageSelect(file);
+      // onImageSelect(file);
     }
   };
 

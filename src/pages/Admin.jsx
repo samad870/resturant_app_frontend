@@ -4,7 +4,7 @@ import OfferSlider from "@/components/Client/OfferSlider";
 import Category from "@/components/Client/Category";
 import OrderComplete from "@/components/Client/OrderComplete";
 import FoodListing from "@/components/Client/FoodListing";
-import Listitem from "@/components/admin/Listitem";
+import Listitem from "@/components/admin/ListItems";
 
 export default function Admin() {
   return (
