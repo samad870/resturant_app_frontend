@@ -29,7 +29,7 @@ const OrdersList = () => {
  const updateOrder = async (orderId, updatedData) => {
   try {
     const res = await fetch(`${API_URL}/${orderId}`, {
-      method: "PATCH",   // 👈 change from PUT to PATCH
+      method: "PUT",   // 👈 change from PUT to PATCH
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updatedData),
     });
