@@ -28,10 +28,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route index element={<Home />} />
         </Route>
         <Route path="admin" element={<AdminLayout />}>
-        <Route index element={<Admin />} />
-        <Route path="listItem" element={<Listitems/>} />
-        <Route path="addItems" element={<AddItems/>}/>
-        <Route path="orderlist" element={<OrdersList/>}/>
+          <Route index element={<Admin />} />
+          <Route path="listItem" element={<Listitems />} />
+          <Route path="addItems" element={<AddItems />} />
+          <Route path="orderlist" element={<OrdersList />} />
         </Route>
 
         <Route path="super-admin" element={<SuperAdmin />} />
