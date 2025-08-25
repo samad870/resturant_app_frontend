@@ -21,6 +21,8 @@ export default function FoodListing({ menu, onQuantityChange }) {
   // Get cart from Redux store
   const cartItems = useSelector((state) => state.cart.items);
 
+  console.log("cartData", cartItems);
+
   // Run callback whenever cart changes
   useEffect(() => {
     if (onQuantityChange) {
@@ -57,7 +59,7 @@ export default function FoodListing({ menu, onQuantityChange }) {
                   <div className="h-32 w-40 overflow-hidden">
                     <img
                       className="w-full h-full object-cover object-center rounded-l-lg"
-                      src={item.image.url}
+                      src={item.image?.url}
                       alt={item.name}
                     />
                   </div>
