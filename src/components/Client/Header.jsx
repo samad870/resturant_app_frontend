@@ -3,29 +3,91 @@ import { X, Utensils } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useSelector, useDispatch } from "react-redux";
-import { removeFromCart } from "../../features/cartSlice"; // ✅ adjust path
+import { removeFromCart, clearCart } from "../../features/cartSlice";
+import { useNavigate } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Header({ logo, siteName = "Default Name" }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const dispatch = useDispatch();
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-  // Get cart from Redux
+  // form inputs
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [tableId, setTableId] = useState("");
+
+  const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.items);
 
-  // total items count
   const cartCount = Object.values(cartItems).reduce(
     (acc, item) => acc + item.quantity,
     0
   );
 
-  // total amount
   const totalAmount = Object.values(cartItems).reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
   );
 
+  // handle order API
+  const handleOrderSubmit = async () => {
+    try {
+      setLoading(true);
+      const restaurantId = "cafe";
+
+      const orderItems = Object.values(cartItems).map((item) => ({
+        menuItem: item._id,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+      toast({
+        title: "Order Commplete thankyou!",
+        description: "it will take upto 10 t0 15 min",
+      });
+
+      const response = await fetch(
+        `https://restaurant-app-backend-mihf.onrender.com/api/order/${restaurantId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customerName,
+            customerPhone,
+            tableId,
+            items: orderItems,
+            totalAmount,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to place order");
+
+      const data = await response.json();
+      console.log("Order Success:", data);
+
+      // ✅ close modal + cart
+      setShowModal(false);
+      setIsCartOpen(false);
+
+      // ✅ THEN clear cart
+      setTimeout(() => {
+        dispatch(clearCart());
+      }, 300);
+    } catch (error) {
+      console.error("Error placing order:", error);
+      alert("❌ Failed to place order. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
+      <Toaster />
+      {/* Header */}
       <header className="flex items-center justify-between py-4">
         <Link to="/" className="flex items-center space-x-2">
           {logo && <img src={logo} alt="Logo" className="h-12 w-auto" />}
@@ -44,6 +106,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
         </button>
       </header>
 
+      {/* Cart Sidebar */}
       {isCartOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-40 z-40"
@@ -93,7 +156,6 @@ export default function Header({ logo, siteName = "Default Name" }) {
                 ))}
               </ul>
 
-              {/* Total Amount Section */}
               <div className="border-t pt-4 flex justify-between items-center">
                 <span className="font-semibold">Total:</span>
                 <span className="font-bold text-lg">
@@ -101,13 +163,74 @@ export default function Header({ logo, siteName = "Default Name" }) {
                 </span>
               </div>
 
-              <Button className="bg-primary text-white w-full" disabled={cartCount === 0}>
+              <Button
+                className="bg-primary text-white w-full"
+                disabled={cartCount === 0}
+                onClick={() => setShowModal(true)} // open modal instead of API
+              >
                 Order Now
               </Button>
             </>
           )}
         </div>
       </div>
+
+      {/* Modal for Customer Details */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-md">
+            <h2 className="text-lg font-semibold mb-4">Enter Your Details</h2>
+
+            <input
+              type="text"
+              placeholder="Your Name"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              className="w-full border rounded-lg p-2 mb-3"
+            />
+
+            <input
+              type="tel"
+              placeholder="Phone Number"
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value)}
+              className="w-full border rounded-lg p-2 mb-3"
+            />
+
+            <select
+              value={tableId}
+              onChange={(e) => setTableId(e.target.value)}
+              className="w-full border rounded-lg p-2 mb-4"
+            >
+              <option value="">Select Table</option>
+              <option value="T1">Table 1</option>
+              <option value="T2">Table 2</option>
+              <option value="T3">Table 3</option>
+              <option value="T4">Table 4</option>
+              <option value="T5">Table 5</option>
+            </select>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowModal(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-primary text-white"
+                onClick={handleOrderSubmit}
+                disabled={
+                  !customerName || !customerPhone || !tableId || loading
+                }
+              >
+                {loading ? "Submitting..." : "Submit"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
