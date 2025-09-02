@@ -9,7 +9,7 @@ export default function SearchItem({ search, onSearch }) {
         placeholder="Search"
         value={search}
         onChange={(e) => onSearch(e.target.value)}
-        className="bg-white rounded-2xl px-4 shadow-sm py-6 text-[16px] font-light pl-12 outline-none border-none"
+        className="bg-white rounded-2xl px-4 shadow-sm py-6 text-[16px] font-light pl-12 outline-none border border-gray-400"
       />
       <Search className="absolute left-3 top-2 w-fit h-8 text-gray-300 z-10" />
     </div>
