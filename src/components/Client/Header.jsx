@@ -7,6 +7,7 @@ import { removeFromCart, clearCart } from "../../features/cartSlice";
 import { useNavigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
+import OrderComplete from "@/components/Client/OrderComplete";
 
 export default function Header({ logo, siteName = "Default Name" }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -87,8 +88,14 @@ export default function Header({ logo, siteName = "Default Name" }) {
   return (
     <>
       <Toaster />
+      <OrderComplete
+        amount={totalAmount.toFixed(2)}
+        buttonText="Order Now"
+        disabled={cartCount === 0}
+        onClick={() => setShowModal(true)}
+      />
       {/* Header */}
-      <header className="flex items-center justify-between py-4">
+      <header className="flex items-center justify-between pt-4 pb-2">
         <Link to="/" className="flex items-center space-x-2">
           {logo && <img src={logo} alt="Logo" className="h-12 w-auto" />}
           <span className="text-primary font-mostrate text-2xl">
