@@ -40,7 +40,8 @@ export default function Header({ logo, siteName = "Default Name" }) {
       const restaurantId = "cafe";
 
       const orderItems = Object.values(cartItems).map((item) => ({
-        menuItem: item._id,
+        menuItemId: item._id,
+        name: item.name,
         quantity: item.quantity,
         price: item.price,
       }));
