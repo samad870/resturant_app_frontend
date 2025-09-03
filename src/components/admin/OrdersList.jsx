@@ -9,7 +9,7 @@ const OrdersList = () => {
   const [menuItems, setMenuItems] = useState([]);
 
   const API_URL = "https://restaurant-app-backend-mihf.onrender.com/api/order";
-
+// hello
   const recalcTotal = (items) =>
     items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
