@@ -19,6 +19,7 @@ import { store } from "./store";
 // import OrderList from "./components/admin/OrdersList";
 import OrdersList from "./components/admin/OrdersList";
 import Filter from "./components/Client/Filter";
+import LoginPage from "./components/admin/LoginPage";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   // <React.StrictMode>
@@ -26,6 +27,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<MainLayout />}>
+
           <Route index element={<Home />} />
           <Route path="filter" element={<Filter />} />
         </Route>
@@ -34,9 +36,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="listItem" element={<Listitems />} />
           <Route path="addItems" element={<AddItems />} />
           <Route path="orderlist" element={<OrdersList />} />
+
         </Route>
 
         <Route path="super-admin" element={<SuperAdmin />} />
+          <Route path="login" element={<LoginPage />} />
+  
       </Routes>
     </BrowserRouter>
   </Provider>

@@ -157,12 +157,16 @@ const OrdersList = () => {
                       <td className="px-6 py-4">
                         <ul className="space-y-1">
                           {order.items.map((item, idx) => (
+                          
+                          
                             <li
                               key={idx}
                               className="flex items-center text-gray-700"
                             >
-                              {item.name} × {item.quantity} = ₹
-                              {item.price * item.quantity}
+                              <span className="mr-2 text-gray-500">•</span>
+                              {item.menuItem?.name || "Unknown"} ×{" "}
+                              {console.log(item)}
+                              {item.quantity} = ₹{item.price}
                             </li>
                           ))}
                         </ul>
@@ -357,11 +361,23 @@ const OrdersList = () => {
                 </option>
               ))}
             </select>
-
-            {/* Total Amount (auto) */}
-            <p className="font-semibold text-gray-900 mb-4">
-              Total: ₹{editingOrder.totalAmount}
-            </p>
+             <div>
+             {/*  */}
+             </div>
+            <label className="block text-sm font-medium mb-1">
+              Total Amount
+            </label>
+            <input
+              type="number"
+              defaultValue={editingOrder.totalAmount}
+              onChange={(e) =>
+                setEditingOrder({
+                  ...editingOrder,
+                  totalAmount: Number(e.target.value),
+                })
+              }
+              className="w-full border rounded-lg px-3 py-2 mb-4"
+            />
 
             {/* Actions */}
             <div className="flex justify-end space-x-3">

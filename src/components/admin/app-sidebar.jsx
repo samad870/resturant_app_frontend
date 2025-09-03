@@ -39,6 +39,23 @@ const data = {
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
+     {
+      title: "Details",
+      url: "#",
+      icon: ScrollText,
+      isActive: true,
+      items: [
+        {
+          title: "Form",
+          url: "/admin",
+        },
+        {
+          title: "Image",
+          url: "#",
+        },
+
+      ],
+    },
     {
       title: "Order Management",
       url: "#",
