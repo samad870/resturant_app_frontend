@@ -4,14 +4,14 @@ const OrdersList = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [editingOrder, setEditingOrder] = useState(null); // for modal
+  const [editingOrder, setEditingOrder] = useState(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(null);
+  const [menuItems, setMenuItems] = useState([]);
 
   const API_URL = "https://restaurant-app-backend-mihf.onrender.com/api/order";
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  const recalcTotal = (items) =>
+    items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const fetchOrders = async () => {
     try {
@@ -26,26 +26,37 @@ const OrdersList = () => {
     }
   };
 
- const updateOrder = async (orderId, updatedData) => {
-  try {
-    const res = await fetch(`${API_URL}/${orderId}`, {
-      method: "PUT",   // 👈 change from PUT to PATCH
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedData),
-    });
-    if (!res.ok) throw new Error("Failed to update order");
-    fetchOrders();
-    setEditingOrder(null);
-  } catch (err) {
-    alert(err.message);
-  }
-};
+  const fetchMenuItems = async () => {
+    try {
+      const res = await fetch(
+        "https://restaurant-app-backend-mihf.onrender.com/api/menu"
+      );
+      if (!res.ok) throw new Error("Failed to fetch menu items");
+      const data = await res.json();
+      setMenuItems(data);
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
 
+  const updateOrder = async (orderId, updatedData) => {
+    try {
+      const res = await fetch(`${API_URL}/${orderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      });
+      if (!res.ok) throw new Error("Failed to update order");
+      fetchOrders();
+      setEditingOrder(null);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   const deleteOrder = async (orderId) => {
     try {
       const res = await fetch(`${API_URL}/${orderId}`, { method: "DELETE" });
-
       if (!res.ok) throw new Error("Failed to delete order");
       fetchOrders();
       setShowConfirmDelete(null);
@@ -67,22 +78,25 @@ const OrdersList = () => {
     }
   };
 
+  useEffect(() => {
+    fetchOrders();
+    fetchMenuItems();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6 text-center">
-          <h2 className="text-2xl font-semibold text-gray-900 tracking-tight">
-            Order Dashboard
-          </h2>
+          <h2 className="text-3xl font-bold text-gray-900">Orders Dashboard</h2>
           <p className="text-gray-500 text-sm mt-1">
             Showing {orders.length} Order{orders.length !== 1 && "s"}
           </p>
         </div>
 
-        {/* Content */}
+        {/* Orders Table / Cards */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* Table (Desktop) */}
+          {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="min-w-full text-sm text-left">
               <thead className="bg-gray-50 text-gray-600 uppercase tracking-wide text-xs">
@@ -147,9 +161,8 @@ const OrdersList = () => {
                               key={idx}
                               className="flex items-center text-gray-700"
                             >
-                              <span className="mr-2 text-gray-500">•</span>
-                              {item.menuItem?.name || "Unknown"} ×{" "}
-                              {item.quantity} = ₹{item.price}
+                              {item.name} × {item.quantity} = ₹
+                              {item.price * item.quantity}
                             </li>
                           ))}
                         </ul>
@@ -163,15 +176,15 @@ const OrdersList = () => {
                       <td className="px-6 py-4 text-right space-x-2">
                         <button
                           onClick={() => setEditingOrder(order)}
-                          className="px-3 py-1 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition font-medium"
+                          className="px-3 py-1 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition font-medium"
                         >
                           ✏️ Edit
                         </button>
                         <button
                           onClick={() => setShowConfirmDelete(order)}
-                          className="px-3 py-1 rounded-xl bg-red-100 text-red-700 hover:bg-red-200 transition font-medium"
+                          className="px-3 py-1 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 transition font-medium"
                         >
-                          🗑 Delete
+                          🗑 Bin
                         </button>
                       </td>
                     </tr>
@@ -181,7 +194,7 @@ const OrdersList = () => {
             </table>
           </div>
 
-          {/* Card Layout (Mobile) */}
+          {/* Mobile Cards */}
           <div className="md:hidden space-y-4 p-4">
             {loading ? (
               <p className="text-center text-gray-500">Loading...</p>
@@ -216,8 +229,8 @@ const OrdersList = () => {
                     <ul className="list-disc list-inside text-gray-600 mt-1">
                       {order.items.map((item, idx) => (
                         <li key={idx}>
-                          {item.menuItem?.name || "Unknown"} × {item.quantity} =
-                          ₹{item.price}
+                          {item.name} × {item.quantity} = ₹
+                          {item.price * item.quantity}
                         </li>
                       ))}
                     </ul>
@@ -231,13 +244,13 @@ const OrdersList = () => {
                   <div className="flex justify-end space-x-2">
                     <button
                       onClick={() => setEditingOrder(order)}
-                      className="px-3 py-1 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition text-sm"
+                      className="px-3 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition text-sm"
                     >
                       ✏️ Edit
                     </button>
                     <button
                       onClick={() => setShowConfirmDelete(order)}
-                      className="px-3 py-1 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition text-sm"
+                      className="px-3 py-1 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition text-sm"
                     >
                       🗑 Delete
                     </button>
@@ -255,71 +268,102 @@ const OrdersList = () => {
           <div className="bg-white rounded-2xl shadow-lg max-w-md w-full p-6">
             <h3 className="text-lg font-semibold mb-4">Edit Order</h3>
 
-            <label className="block text-sm font-medium mb-1">
-              Customer Name
-            </label>
-            <input
-              type="text"
-              defaultValue={editingOrder.customerName}
-              onChange={(e) =>
-                setEditingOrder({ ...editingOrder, customerName: e.target.value })
-              }
-              className="w-full border rounded-lg px-3 py-2 mb-3"
-            />
-
-            <label className="block text-sm font-medium mb-1">
-              Customer Phone
-            </label>
-            <input
-              type="text"
-              defaultValue={editingOrder.customerPhone}
-              onChange={(e) =>
-                setEditingOrder({
-                  ...editingOrder,
-                  customerPhone: e.target.value,
-                })
-              }
-              className="w-full border rounded-lg px-3 py-2 mb-3"
-            />
-
+            {/* Table ID */}
             <label className="block text-sm font-medium mb-1">Table ID</label>
             <input
               type="text"
-              defaultValue={editingOrder.tableId}
+              value={editingOrder.tableId}
               onChange={(e) =>
                 setEditingOrder({ ...editingOrder, tableId: e.target.value })
               }
               className="w-full border rounded-lg px-3 py-2 mb-3"
             />
 
-            <label className="block text-sm font-medium mb-1">Status</label>
+            {/* Items Section */}
+            <label className="block text-sm font-medium mb-1">Items</label>
+            <div className="space-y-3 mb-4">
+              {editingOrder.items.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between bg-gray-50 p-2 rounded-lg"
+                >
+                  <span className="text-gray-800">
+                    {item.name} (₹{item.price})
+                  </span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => {
+                      const newItems = [...editingOrder.items];
+                      newItems[idx].quantity = Number(e.target.value);
+                      setEditingOrder({
+                        ...editingOrder,
+                        items: newItems,
+                        totalAmount: recalcTotal(newItems),
+                      });
+                    }}
+                    className="w-16 border rounded-lg px-2 py-1 mx-2"
+                  />
+                  <button
+                    onClick={() => {
+                      const newItems = editingOrder.items.filter(
+                        (_, i) => i !== idx
+                      );
+                      setEditingOrder({
+                        ...editingOrder,
+                        items: newItems,
+                        totalAmount: recalcTotal(newItems),
+                      });
+                    }}
+                    className="px-2 py-1 rounded bg-red-100 text-red-600"
+                  >
+                    ✖
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Add New Item */}
             <select
-              defaultValue={editingOrder.status}
-              onChange={(e) =>
-                setEditingOrder({ ...editingOrder, status: e.target.value })
-              }
-              className="w-full border rounded-lg px-3 py-2 mb-4"
+              onChange={(e) => {
+                const selected = menuItems.find(
+                  (m) => m._id === e.target.value
+                );
+                if (selected) {
+                  const newItems = [
+                    ...editingOrder.items,
+                    {
+                      name: selected.name,
+                      price: selected.price,
+                      quantity: 1,
+                    },
+                  ];
+                  setEditingOrder({
+                    ...editingOrder,
+                    items: newItems,
+                    totalAmount: recalcTotal(newItems),
+                  });
+                }
+                e.target.value = "";
+              }}
+              defaultValue=""
+              className="w-full border rounded-lg px-3 py-2 mb-3"
             >
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="">+ Add Item</option>
+              {menuItems.map((menu) => (
+                <option key={menu._id} value={menu._id}>
+                  {menu.name} (₹{menu.price})
+                </option>
+              ))}
             </select>
 
-            <label className="block text-sm font-medium mb-1">
-              Total Amount
-            </label>
-            <input
-              type="number"
-              defaultValue={editingOrder.totalAmount}
-              onChange={(e) =>
-                setEditingOrder({
-                  ...editingOrder,
-                  totalAmount: Number(e.target.value),
-                })
-              }
-              className="w-full border rounded-lg px-3 py-2 mb-4"
-            />
+            {/* Total Amount (auto) */}
+            <p className="font-semibold text-gray-900 mb-4">
+              Total: ₹{editingOrder.totalAmount}
+            </p>
 
+            {/* Actions */}
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setEditingOrder(null)}
@@ -330,11 +374,10 @@ const OrdersList = () => {
               <button
                 onClick={() =>
                   updateOrder(editingOrder._id, {
-                    customerName: editingOrder.customerName,
-                    customerPhone: editingOrder.customerPhone,
                     tableId: editingOrder.tableId,
-                    status: editingOrder.status,
+                    items: editingOrder.items,
                     totalAmount: editingOrder.totalAmount,
+                    status: editingOrder.status,
                   })
                 }
                 className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
