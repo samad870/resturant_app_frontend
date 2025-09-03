@@ -13,7 +13,7 @@ export default function Filter({ filters, onChange }) {
   const handleFilterChange = (key) => {
     if (key === "veg") {
       onChange("veg", !filters.veg); // toggle veg
-      if (!filters.veg) onChange("nonVeg", false); // if enabling veg, disable non-veg
+      if (!filters.veg) onChange("nonVeg", false); // if enabling veg, disable non-vegggg
     } else if (key === "nonVeg") {
       onChange("nonVeg", !filters.nonVeg); // toggle non-veg
       if (!filters.nonVeg) onChange("veg", false); // if enabling non-veg, disable veg
