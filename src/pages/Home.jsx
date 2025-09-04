@@ -8,6 +8,7 @@ import Filter from "@/components/Client/Filter";
 import Category from "@/components/Client/Category";
 // import OrderComplete from "@/components/Client/OrderComplete";
 import FoodListing from "@/components/Client/FoodListing";
+import Copywright from "@/components/Client/Copywright";
 
 export default function Home() {
   const { data, loading, error } = useMenu();
@@ -67,6 +68,7 @@ export default function Home() {
       </div>
       <FoodListing menu={filteredMenu} onQuantityChange={setTotal} />
       {/* <OrderComplete total={total} /> */}
+      <Copywright />
     </>
   );
 }
