@@ -13,7 +13,7 @@ export default function Category({
   );
 
   return (
-    <div className="my-4 flex flex-col">
+    <div className="my-4 flex flex-col pl-2">
       <div className="flex items-center gap-2 font-normal">
         <Layers className="text-primary" size={24} strokeWidth={2.5} />
         <span className="text-lg">{title}</span>

@@ -43,7 +43,7 @@ export default function FoodListing({ menu, onQuantityChange }) {
   };
 
   return (
-    <div className="my-4 flex flex-col pb-20">
+    <div className="my-4 flex flex-col pb-20 px-2">
       {Object.keys(groupedMenu).map((category) => (
         <div key={category} id={`category-${category}`} className="mb-6">
           <div className="flex items-center gap-2 font-normal mb-2">
@@ -54,7 +54,7 @@ export default function FoodListing({ menu, onQuantityChange }) {
           {groupedMenu[category].map((item) => {
             const quantity = cartItems[item._id]?.quantity || 0; // ✅ derive directly from Redux
             return (
-              <div key={item._id} className="py-2 mr-2">
+              <div key={item._id} className="py-2">
                 <div className="border rounded-lg flex gap-1 shadow-md">
                   <div className="h-32 w-40 overflow-hidden">
                     <img

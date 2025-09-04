@@ -8,19 +8,21 @@ export default function OrderComplete({
   disabled,
 }) {
   return (
-    <div className="fixed bottom-0 left-0 w-full">
-      <div className="bg-white w-full p-2 flex items-center justify-between shadow-lg">
-        <span className="flex items-center gap-1 text-base">
-          <IndianRupee />
-          {amount.toLocaleString("en-IN")}
-        </span>
-        <Button
-          className="bg-primary text-white"
-          onClick={onClick}
-          disabled={disabled}
-        >
-          {buttonText}
-        </Button>
+    <div>
+      <div className="w-full p-2 shadow-lg">
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1 text-base">
+            <IndianRupee />
+            {amount.toLocaleString("en-IN")}
+          </span>
+          <Button
+            className="bg-primary text-white"
+            onClick={onClick}
+            disabled={disabled}
+          >
+            {buttonText}
+          </Button>
+        </div>
       </div>
     </div>
   );
