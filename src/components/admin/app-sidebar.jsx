@@ -50,7 +50,7 @@ const data = {
           url: "/admin",
         },
         {
-          title: "Image",
+          title: "Logo",
           url: "#",
         },
 
