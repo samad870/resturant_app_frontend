@@ -1,18 +1,18 @@
-// src/pages/LoginPage.jsx
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ import navigate hook
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const LoginPage = () => {
-  // state for form fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // handle form submit
+  const navigate = useNavigate(); 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -24,25 +24,25 @@ const LoginPage = () => {
         "https://restaurant-app-backend-mihf.onrender.com/api/auth/login",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         }
       );
 
       const data = await response.json();
-
+      console.log(data);
       if (response.ok) {
+        localStorage.setItem("token", data.token);
+
         setSuccess("Login successful!");
-        console.log("User data:", data);
-        // yahan token ya user info ko localStorage me save kar sakte ho
-        // localStorage.setItem("token", data.token);
+
+        navigate("/admin", { replace: true });
       } else {
         setError(data.message || "Login failed, please try again.");
       }
     } catch (err) {
       setError("Something went wrong, please try again later.");
+      console.log(err);
     } finally {
       setLoading(false);
     }
@@ -61,7 +61,6 @@ const LoginPage = () => {
 
       {/* Right Form Section */}
       <div className="flex w-full md:w-1/2 items-center justify-center p-6 bg-white relative">
-        {/* Mobile Background Image */}
         <div className="absolute inset-0 md:hidden">
           <img
             src="https://is3-ssl.mzstatic.com/image/thumb/Purple69/v4/6d/48/d6/6d48d6c3-25ee-b839-056c-0b4ebb271d8c/source/512x512bb.jpg"
@@ -71,7 +70,6 @@ const LoginPage = () => {
           <div className="absolute inset-0 bg-black/50" />
         </div>
 
-        {/* Form */}
         <Card className="relative z-10 w-full max-w-md shadow-2xl bg-white/90 backdrop-blur">
           <CardHeader>
             <CardTitle className="text-center text-3xl font-bold text-gray-800">
