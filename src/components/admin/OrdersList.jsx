@@ -159,7 +159,8 @@ const OrdersList = () => {
                           onClick={() => setSelectedItems(order)}
                           className="px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition font-medium"
                         >
-                          View Items
+                          View Items 
+                          {/*  */}
                         </button>
                       </td>
                       {/* Actions */}
