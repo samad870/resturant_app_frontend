@@ -12,7 +12,7 @@ export function useMenu() {
       try {
         const data = await getMenu(name);
         setMenu(data);
-        console.log('qwertyu', data)
+        // console.log('qwertyu', data)
       } catch (err) {
         setError(err.message || "Error fetching menu");
       } finally {
