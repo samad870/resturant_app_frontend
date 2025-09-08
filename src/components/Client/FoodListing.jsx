@@ -21,7 +21,7 @@ export default function FoodListing({ menu, onQuantityChange }) {
   // Get cart from Redux store
   const cartItems = useSelector((state) => state.cart.items);
 
-  console.log("cartData", cartItems);
+  // console.log("cartData", cartItems);
 
   // Run callback whenever cart changes
   useEffect(() => {
