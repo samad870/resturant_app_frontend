@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMenu } from "../hooks/useMenu";
 import Header from "@/components/Client/Header";
 import SearchItem from "@/components/Client/SearchItem";
@@ -9,15 +9,36 @@ import Category from "@/components/Client/Category";
 // import OrderComplete from "@/components/Client/OrderComplete";
 import FoodListing from "@/components/Client/FoodListing";
 import Copywright from "@/components/Client/Copywright";
+import loader from "@/assets/loader.gif";
 
 export default function Home() {
   const { data, loading, error } = useMenu();
+  const [showLoader, setShowLoader] = useState(true);
   const [filters, setFilters] = useState({ veg: false, nonVeg: false });
   const [search, setSearch] = useState("");
   const [total, setTotal] = useState(0);
   const [activeCategory, setActiveCategory] = useState(null);
 
-  if (loading) return <p>Loading menu...</p>;
+  // Ensure loader stays for at least 3 seconds
+  useEffect(() => {
+    let timer;
+    if (loading) {
+      setShowLoader(true);
+    } else {
+      timer = setTimeout(() => {
+        setShowLoader(false);
+      }, 2000); // min 3 seconds
+    }
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  if (showLoader)
+    return (
+      <div className="flex justify-center items-center max-h-screen min-h-screen">
+        <img src={loader} alt="Loading..." className=" h-60" />
+      </div>
+    );
+
   if (error) return <p>Error: {error}</p>;
 
   const restaurant = data?.restaurant;
@@ -49,7 +70,6 @@ export default function Home() {
   };
 
   const handleCategoryClick = (category) => {
-    // toggle category selection (if same category clicked again, reset to show all)
     setActiveCategory((prev) => (prev === category ? null : category));
   };
 
@@ -63,7 +83,7 @@ export default function Home() {
           title="Food Categories"
           categories={menu}
           onCategoryClick={handleCategoryClick}
-          activeCategory={activeCategory} // (optional: pass for UI highlighting)
+          activeCategory={activeCategory}
         />
       </div>
       <FoodListing menu={filteredMenu} onQuantityChange={setTotal} />
