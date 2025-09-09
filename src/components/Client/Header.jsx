@@ -3,7 +3,11 @@ import { X, Utensils } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useSelector, useDispatch } from "react-redux";
-import { removeFromCart, clearCart } from "../../features/cartSlice";
+import {
+  removeFromCart,
+  incrementQuantity,
+  clearCart,
+} from "../../features/cartSlice";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import OrderComplete from "@/components/Client/OrderComplete";
@@ -171,23 +175,36 @@ export default function Header({ logo, siteName = "Default Name" }) {
                     <p className="text-gray-500">Your cart is empty.</p>
                   ) : (
                     <ul className="space-y-4 flex-1 overflow-y-auto">
-                      {Object.values(cartItems).map((item) => (
+                      {Object.entries(cartItems).map(([id, item]) => (
                         <li
-                          key={item._id}
+                          key={id}
                           className="flex items-center justify-between border-b pb-2"
                         >
                           <div>
                             <p className="font-medium text-sm">{item.name}</p>
-                            <p className="text-xs text-gray-500">
-                              {item.quantity} × ₹{item.price.toFixed(2)}
-                            </p>
-                            <button
-                              className="text-xs text-red-600 hover:underline"
-                              onClick={() => dispatch(removeFromCart(item._id))}
-                            >
-                              Remove
-                            </button>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <button
+                                className="px-2 py-1 border rounded hover:bg-gray-100"
+                                onClick={() => dispatch(removeFromCart(id))}
+                              >
+                                −
+                              </button>
+
+                              <span className="px-1">{item.quantity}</span>
+
+                              <button
+                                className="px-2 py-1 border rounded hover:bg-gray-100"
+                                onClick={() => dispatch(incrementQuantity(id))}
+                              >
+                                +
+                              </button>
+
+                              <span className="ml-2">
+                                × ₹{item.price.toFixed(2)}
+                              </span>
+                            </div>
                           </div>
+
                           <p className="font-semibold text-sm">
                             ₹{(item.price * item.quantity).toFixed(2)}
                           </p>
