@@ -1,4 +1,4 @@
-"use client";
+"use client"; // if your project requires it (Next.js app dir). Remove if not needed.
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, removeFromCart } from "../../features/cartSlice";
 import { Dot } from "lucide-react";
@@ -15,15 +15,13 @@ const groupByCategory = (items) => {
 };
 
 export default function FoodListing({ menu, onQuantityChange }) {
-  const groupedMenu = groupByCategory(menu);
+  const groupedMenu = groupByCategory(menu || []);
   const dispatch = useDispatch();
 
   // Get cart from Redux store
-  const cartItems = useSelector((state) => state.cart.items);
+  const cartItems = useSelector((state) => state.cart.items || {});
 
-  // console.log("cartData", cartItems);
-
-  // Run callback whenever cart changes
+  // Notify parent of total amount
   useEffect(() => {
     if (onQuantityChange) {
       const total = Object.values(cartItems).reduce(
@@ -35,6 +33,7 @@ export default function FoodListing({ menu, onQuantityChange }) {
   }, [cartItems, onQuantityChange]);
 
   const increment = (item) => {
+    // addToCart will create the item if missing or increment if present
     dispatch(addToCart({ id: item._id, item }));
   };
 
@@ -52,7 +51,7 @@ export default function FoodListing({ menu, onQuantityChange }) {
           </div>
 
           {groupedMenu[category].map((item) => {
-            const quantity = cartItems[item._id]?.quantity || 0; // ✅ derive directly from Redux
+            const quantity = cartItems[item._id]?.quantity || 0;
             return (
               <div key={item._id} className="py-2">
                 <div className="border rounded-lg flex gap-1 shadow-md">

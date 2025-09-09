@@ -14,6 +14,16 @@ const cartSlice = createSlice({
         state.items[id].quantity += 1;
       }
     },
+
+    // 👇 Add this here
+    incrementQuantity: (state, action) => {
+      // console.log("Increment called for:", action.payload); // debug
+      const id = action.payload;
+      if (state.items[id]) {
+        state.items[id].quantity += 1;
+      }
+    },
+
     removeFromCart: (state, action) => {
       const id = action.payload;
       if (state.items[id]) {
@@ -23,11 +33,13 @@ const cartSlice = createSlice({
         }
       }
     },
+
     clearCart: (state) => {
       state.items = {};
     },
   },
 });
 
-export const { addToCart, removeFromCart, clearCart } = cartSlice.actions;
+export const { addToCart, incrementQuantity, removeFromCart, clearCart } =
+  cartSlice.actions;
 export default cartSlice.reducer;
