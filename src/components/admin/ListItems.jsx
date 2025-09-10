@@ -6,7 +6,7 @@ const Listitems = () => {
   const [error, setError] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
 
-  // Filters
+  // Filter
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("category");
 

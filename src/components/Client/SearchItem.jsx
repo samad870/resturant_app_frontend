@@ -3,7 +3,7 @@ import { Search } from "lucide-react";
 
 export default function SearchItem({ search, onSearch }) {
   return (
-    <div className="relative">
+    <div className="relative px-2">
       <Input
         type="text"
         placeholder="Search"

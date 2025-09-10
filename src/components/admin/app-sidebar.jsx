@@ -66,14 +66,17 @@ const data = {
           title: "Orders List",
           url: "/admin/orderlist",
         },
+         {
+          title: "Completed Order",
+          url: "/admin/completedorder",
+        },
         {
           title: "Pending Order",
-          url: "#",
-        },
-
-        {
-          title: "Delivered",
-          url: "#",
+          url: "/admin/pendingorder",
+        },   
+           {
+          title: "Cancelled Order",
+          url: "/admin/cancelledorder",
         },
       ],
     },
