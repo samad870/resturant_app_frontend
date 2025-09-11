@@ -31,13 +31,14 @@ const LoginPage = () => {
 
       const data = await response.json();
       console.log(data);
-      if (response.ok) {
-        localStorage.setItem("token", data.token);
-
-        setSuccess("Login successful!");
-
-        navigate("/admin", { replace: true });
-      } else {
+     if (response.ok) {
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("userName", data.user?.name || "Admin");
+  localStorage.setItem("userEmail", data.user?.email || email);
+  setSuccess("Login successful!");
+  navigate("/admin", { replace: true });
+}
+ else {
         setError(data.message || "Login failed, please try again.");
       }
     } catch (err) {

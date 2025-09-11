@@ -16,6 +16,9 @@ import OrdersList from "./components/admin/order/OrdersList.jsx";
 import Filter from "./components/Client/Filter";
 import LoginPage from "./components/admin/LoginPage";
 import PrivateRoute from "./components/admin/PrivateRoute";
+import PendingOrders from "./components/admin/order/PendingOrders";
+import CompletedOrders from "./components/admin/order/CompletedOrders";
+import CancelledOrders from "./components/admin/order/CancelledOrders";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
@@ -39,6 +42,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="listItem" element={<Listitems />} />
           <Route path="addItems" element={<AddItems />} />
           <Route path="orderlist" element={<OrdersList />} />
+          <Route path="completedorder" element={<CompletedOrders />} />
+          <Route path="pendingorder" element={<PendingOrders />} />
+          <Route path="cancelledorder" element={<CancelledOrders />} />
+
         </Route>
 
         <Route path="super-admin" element={<SuperAdmin />} />
