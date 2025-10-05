@@ -18,12 +18,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import Copywright from "@/components/Client/Copywright";
+import { useRestaurant } from "../../hooks/useRestaurant"; // separate hook
 
 export default function Header({ logo, siteName = "Default Name" }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { data: restaurantData } = useRestaurant();
 
   // form inputs
   const [customerName, setCustomerName] = useState("");
@@ -32,6 +34,8 @@ export default function Header({ logo, siteName = "Default Name" }) {
 
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.items);
+  const [orderType, setOrderType] = useState(""); // "takeaway" or "eathere"
+  // console.log("123456", orderType);
 
   const cartCount = Object.values(cartItems).reduce(
     (acc, item) => acc + item.quantity,
@@ -42,6 +46,8 @@ export default function Header({ logo, siteName = "Default Name" }) {
     (acc, item) => acc + item.price * item.quantity,
     0
   );
+  const restaurant = restaurantData || {};
+  // console.log("🍽️ Restaurant Data:", restaurantData.restaurant.tableNumbers);
 
   // Store multiple active orders
   const [activeOrders, setActiveOrders] = useState([]);
@@ -95,7 +101,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
   const handleOrderSubmit = async () => {
     try {
       setLoading(true);
-      const restaurantId = "cafe";
+      // const restaurantId = "cafe";
 
       const orderItems = Object.values(cartItems).map((item) => ({
         menuItemId: item._id,
@@ -105,7 +111,8 @@ export default function Header({ logo, siteName = "Default Name" }) {
       }));
 
       const response = await fetch(
-        `https://restaurant-app-backend-mihf.onrender.com/api/order/${restaurantId}`,
+        // `https://restaurant-app-backend-mihf.onrender.com/api/order/${restaurantId}`,
+        "https://restaurant-app-backend-mihf.onrender.com/api/order",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -115,6 +122,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
             tableId,
             items: orderItems,
             totalAmount,
+            orderType,
           }),
         }
       );
@@ -313,36 +321,88 @@ export default function Header({ logo, siteName = "Default Name" }) {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Enter Your Details</h2>
+            <div className="flex items-center gap-1">
+              {logo && (
+                <img src={logo} alt="Logo" className="h-12 w-auto mb-3" />
+              )}
+              <h2 className="text-lg font-semibold mb-4">Enter Your Details</h2>
+            </div>
 
+            {/* Customer Name */}
             <input
               type="text"
               placeholder="Your Name"
               value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className="w-full border rounded-lg p-2 mb-3"
+              onChange={(e) => {
+                if (e.target.value.length <= 15)
+                  setCustomerName(e.target.value);
+              }}
+              className="w-full border rounded-lg p-2 mb-3 border-none outline-none shadow-md"
             />
+            <p className="text-xs text-gray-500 mb-2">
+              Max 15 characters ({15 - customerName.length} left)
+            </p>
 
+            {/* Phone Number */}
             <input
               type="tel"
               placeholder="Phone Number"
               value={customerPhone}
-              onChange={(e) => setCustomerPhone(e.target.value)}
-              className="w-full border rounded-lg p-2 mb-3"
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, ""); // Only digits
+                if (value.length <= 10) setCustomerPhone(value);
+              }}
+              className="w-full border rounded-lg p-2 mb-3 border-none outline-none shadow-md"
             />
+            <p className="text-xs text-gray-500 mb-2">
+              10-digit phone number required
+            </p>
 
+            {/* Table Selection */}
+            {/* Table Selection */}
             <select
               value={tableId}
               onChange={(e) => setTableId(e.target.value)}
-              className="w-full border rounded-lg p-2 mb-4"
+              className="w-full border rounded-lg p-2 mb-4 border-none outline-none shadow-md"
             >
               <option value="">Select Table</option>
-              <option value="T1">Table 1</option>
-              <option value="T2">Table 2</option>
-              <option value="T3">Table 3</option>
-              <option value="T4">Table 4</option>
-              <option value="T5">Table 5</option>
+
+              {/* Dynamically generate table options */}
+              {Array.from(
+                { length: restaurantData?.restaurant?.tableNumbers || 0 },
+                (_, index) => (
+                  <option key={index + 1} value={`T${index + 1}`}>
+                    Table {index + 1}
+                  </option>
+                )
+              )}
             </select>
+
+            {/* Order Type Selection */}
+            <div className="flex justify-start gap-4 mb-4">
+              <button
+                type="button"
+                onClick={() => setOrderType("takeaway")}
+                className={`px-4 py-1 rounded-full border text-sm font-medium transition shadow-md ${
+                  orderType === "takeaway"
+                    ? "bg-primary text-white border-primary"
+                    : "bg-gray-100 text-gray-700 border-gray-300"
+                }`}
+              >
+                Take Away
+              </button>
+              <button
+                type="button"
+                onClick={() => setOrderType("eathere")}
+                className={`px-4 py-1 rounded-full border text-sm font-medium transition shadow-md ${
+                  orderType === "eathere"
+                    ? "bg-primary text-white border-primary"
+                    : "bg-gray-100 text-gray-700 border-gray-300"
+                }`}
+              >
+                Eat Here
+              </button>
+            </div>
 
             <div className="flex justify-end gap-2">
               <Button
@@ -356,7 +416,12 @@ export default function Header({ logo, siteName = "Default Name" }) {
                 className="bg-primary text-white"
                 onClick={handleOrderSubmit}
                 disabled={
-                  !customerName || !customerPhone || !tableId || loading
+                  !customerName ||
+                  !customerPhone ||
+                  customerPhone.length !== 10 ||
+                  !tableId ||
+                  !orderType ||
+                  loading
                 }
               >
                 {loading ? "Submitting..." : "Submit"}
