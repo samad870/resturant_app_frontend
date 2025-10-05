@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
-const ProductForm = () => {
+const RestaurantForm = () => {
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    price: "",
     category: "",
-    type: "",
-    available: true,
+    tableNumbers: "",
+    phoneNumber: "",
+    publicId: "",
   });
 
   const [file, setFile] = useState(null);
@@ -16,29 +14,27 @@ const ProductForm = () => {
 
   // ✅ Category suggestions saved in localStorage
   const [categorySuggestions, setCategorySuggestions] = useState(() => {
-    const savedCategories = localStorage.getItem("productCategories");
-    return savedCategories ? JSON.parse(savedCategories) : [];
+    const saved = localStorage.getItem("restaurantCategories");
+    return saved ? JSON.parse(saved) : [];
   });
 
-  // ✅ Token (get from localStorage or wherever you store it after login)
-  const [token] = useState(() => {
-    return localStorage.getItem("token") || "";
-  });
+  // ✅ Token from localStorage
+  const [token] = useState(() => localStorage.getItem("token") || "");
 
-  // Keep category suggestions in sync with localStorage
+  // Sync categories with localStorage
   useEffect(() => {
     localStorage.setItem(
-      "productCategories",
+      "restaurantCategories",
       JSON.stringify(categorySuggestions)
     );
   }, [categorySuggestions]);
 
   // Input handler
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
@@ -52,7 +48,7 @@ const ProductForm = () => {
     e.preventDefault();
 
     if (!file) {
-      alert("Please select a file");
+      alert("Please upload a logo file");
       return;
     }
 
@@ -70,41 +66,39 @@ const ProductForm = () => {
     try {
       setLoading(true);
 
-      const data = new FormData();
-      data.append("name", formData.name);
-      data.append("description", formData.description);
-      data.append("price", formData.price);
-      data.append("category", formData.category);
-      data.append("type", formData.type);
-      data.append("available", formData.available);
-      data.append("file", file);
+      const payload = {
+        categories: [formData.category],
+        tableNumbers: Number(formData.tableNumbers),
+        phoneNumber: Number(formData.phoneNumber),
+        logo: {
+          url: URL.createObjectURL(file), // demo only
+          public_id: formData.publicId || "sample_logo_id",
+        },
+      };
 
       const res = await fetch(
-        "https://restaurant-app-backend-mihf.onrender.com/api/menu/",
+        "https://restaurant-app-backend-mihf.onrender.com/api/restaurant/details",
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`, // ✅ Send token here
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
-          body: data,
+          body: JSON.stringify(payload),
         }
       );
 
       const result = await res.json();
+      if (!res.ok)
+        throw new Error(result.message || "Failed to add restaurant");
 
-      if (!res.ok) {
-        throw new Error(result.message || "Failed to add product");
-      }
-
-      alert("✅ Product added successfully.");
+      alert("✅ Restaurant details saved successfully.");
 
       setFormData({
-        name: "",
-        description: "",
-        price: "",
         category: "",
-        type: "",
-        available: true,
+        tableNumbers: "",
+        phoneNumber: "",
+        publicId: "",
       });
       setFile(null);
     } catch (error) {
@@ -124,40 +118,10 @@ const ProductForm = () => {
         transition={{ duration: 0.5 }}
       >
         <h2 className="text-3xl font-bold text-gray-900 text-center">
-          🍕 Add New Product
+          🏨 Restaurant Profile
         </h2>
 
-        {/* Row 1: Name + Price */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">Name</label>
-            <input
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
-              placeholder="e.g. Momo"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Price
-            </label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              required
-              className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
-              placeholder="e.g. 121"
-            />
-          </div>
-        </div>
-
-        {/* Row 2: Category + Type */}
+        {/* Row 1: Category + Table Numbers */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-gray-700 font-medium mb-1">
@@ -170,70 +134,73 @@ const ProductForm = () => {
               required
               list="category-suggestions"
               className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
-              placeholder="e.g. Appetizer, Main Course"
+              placeholder="e.g. Indian, Chinese"
             />
             <datalist id="category-suggestions">
-              {categorySuggestions.map((category, index) => (
-                <option key={index} value={category} />
+              {categorySuggestions.map((cat, idx) => (
+                <option key={idx} value={cat} />
               ))}
             </datalist>
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Type</label>
-            <select
-              name="type"
-              value={formData.type}
+            <label className="block text-gray-700 font-medium mb-1">
+              Table Numbers
+            </label>
+            <input
+              type="number"
+              name="tableNumbers"
+              value={formData.tableNumbers}
               onChange={handleChange}
               required
               className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
-            >
-              <option value="">Select Type</option>
-              <option value="veg">Veg 🌱</option>
-              <option value="non-veg">Non-Veg 🍗</option>
-            </select>
+              placeholder="e.g. 25"
+            />
+          </div>
+        </div>
+
+        {/* Row 2: Phone + Public ID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              Phone Number
+            </label>
+            <input
+              type="number"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              required
+              className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
+              placeholder="e.g. 9876543210"
+            />
+          </div>
+
+          <div>
+            {/* <label className="block text-gray-700 font-medium mb-1">
+              Public ID
+            </label>
+            <input
+              name="publicId"
+              value={formData.publicId}
+              onChange={handleChange}
+              className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
+              placeholder="Logo public_id"
+            /> */}
           </div>
         </div>
 
         {/* File Upload */}
         <div>
-          <label className="block text-gray-700 font-medium mb-1">File</label>
+          <label className="block text-gray-700 font-medium mb-1">Logo</label>
           <input
             type="file"
-            name="file"
             onChange={handleFileChange}
             className="w-full border rounded-xl p-3 cursor-pointer"
           />
           {file && (
             <p className="text-sm text-gray-500 mt-2">Selected: {file.name}</p>
           )}
-        </div>
-
-        {/* Available */}
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            name="available"
-            checked={formData.available}
-            onChange={handleChange}
-            className="h-5 w-5 accent-orange-500"
-          />
-          <label className="font-medium text-gray-700">Available</label>
-        </div>
-
-        {/* Description */}
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">
-            Description
-          </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows="3"
-            className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
-            placeholder="Short description..."
-          />
         </div>
 
         {/* Submit */}
@@ -243,11 +210,11 @@ const ProductForm = () => {
           whileTap={{ scale: 0.95 }}
           className="w-full bg-orange-500 text-white py-3 rounded-xl text-lg font-semibold shadow-md hover:bg-orange-600 transition"
         >
-          {loading ? "Saving..." : "Save Product"}
+          {loading ? "Saving..." : "Save Restaurant"}
         </motion.button>
       </motion.form>
     </div>
   );
 };
 
-export default ProductForm;
+export default RestaurantForm;

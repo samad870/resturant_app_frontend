@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from "react";
 
-const Listitems = () => {
+const ListItems = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
 
-  // Filter
+  // Filters
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("category");
 
   const API_URL = "https://restaurant-app-backend-mihf.onrender.com/api/menu";
+  const token = localStorage.getItem("token");
 
+  // ✅ Fetch Data
   useEffect(() => {
     fetchData();
   }, []);
@@ -19,10 +21,21 @@ const Listitems = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error("Failed to fetch data");
+      const res = await fetch(API_URL, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+
       const data = await res.json();
-      setItems(data);
+      console.log("API response:", data);
+
+      if (Array.isArray(data.menu)) {
+        setItems(data.menu);
+      } else {
+        setError("Unexpected API response format");
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -30,10 +43,14 @@ const Listitems = () => {
     }
   };
 
+  // ✅ Delete
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this item?")) return;
     try {
-      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
       if (!res.ok) throw new Error("Failed to delete");
       setItems(items.filter((item) => item._id !== id));
     } catch (err) {
@@ -41,16 +58,37 @@ const Listitems = () => {
     }
   };
 
+  // ✅ Update
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
+      let body;
+      let headers = { Authorization: token ? `Bearer ${token}` : "" };
+
+      // If image is a File → send FormData
+      if (editingItem.image instanceof File) {
+        body = new FormData();
+        body.append("name", editingItem.name);
+        body.append("category", editingItem.category);
+        body.append("type", editingItem.type);
+        body.append("price", editingItem.price);
+        body.append("description", editingItem.description);
+        body.append("available", editingItem.available);
+        body.append("image", editingItem.image);
+      } else {
+        headers["Content-Type"] = "application/json";
+        body = JSON.stringify(editingItem);
+      }
+
       const res = await fetch(`${API_URL}/${editingItem._id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editingItem),
+        headers,
+        body,
       });
+
       if (!res.ok) throw new Error("Failed to update");
       const updated = await res.json();
+
       setItems(items.map((i) => (i._id === updated._id ? updated : i)));
       setEditingItem(null);
     } catch (err) {
@@ -58,13 +96,14 @@ const Listitems = () => {
     }
   };
 
-  // Extract unique categories for filter
+  // ✅ Categories for filter
   const categories = ["category", ...new Set(items.map((i) => i.category))];
 
-  // Apply filters
+  // ✅ Apply filters
   const filteredItems = items.filter((item) => {
     const typeMatch = filterType === "all" || item.type === filterType;
-    const categoryMatch = filterCategory === "category" || item.category === filterCategory;
+    const categoryMatch =
+      filterCategory === "category" || item.category === filterCategory;
     return typeMatch && categoryMatch;
   });
 
@@ -73,7 +112,7 @@ const Listitems = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6 text-center">
-          <h2 className="text-3xl font-bold text-gray-800">🍕 Our Menu</h2>
+          <h2 className="text-3xl font-bold text-gray-800">🍔 Our Menu</h2>
           <p className="text-gray-500">
             Showing <b>{filteredItems.length}</b> delicious items
           </p>
@@ -85,7 +124,7 @@ const Listitems = () => {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="border border-orange-500 text-gray-700 px-2  py-2 rounded-lg shadow-sm 
+            className="border border-orange-500 text-gray-700 px-2 py-2 rounded-lg shadow-sm 
                        focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer"
           >
             <option value="all">Type</option>
@@ -97,7 +136,7 @@ const Listitems = () => {
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="border border-orange-500 text-gray-700 px-2  py-2 rounded-lg shadow-sm 
+            className="border border-orange-500 text-gray-700 px-2 py-2 rounded-lg shadow-sm 
                        focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer"
           >
             {categories.map((cat, idx) => (
@@ -129,9 +168,12 @@ const Listitems = () => {
 
                 {/* Card Content */}
                 <div className="p-4 flex flex-col flex-grow">
-                  {/* Name + Category */}
-                  <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
-                  <p className="text-sm text-gray-500">Category: {item.category}</p>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {item.name}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Category: {item.category}
+                  </p>
                   <p className="text-sm text-gray-500">Type: {item.type}</p>
 
                   {/* Description */}
@@ -140,7 +182,9 @@ const Listitems = () => {
                   </p>
 
                   {/* Price */}
-                  <p className="mt-2 text-green-600 font-bold text-lg">₹{item.price}</p>
+                  <p className="mt-2 text-green-600 font-bold text-lg">
+                    ₹{item.price}
+                  </p>
 
                   {/* Availability */}
                   <label className="flex items-center gap-2 mt-2">
@@ -180,7 +224,9 @@ const Listitems = () => {
         {editingItem && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-2xl shadow-2xl w-[500px] max-h-[90vh] overflow-y-auto">
-              <h3 className="text-lg font-semibold mb-4 text-gray-800">Edit Item</h3>
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                Edit Item
+              </h3>
               <form onSubmit={handleUpdate} className="space-y-4">
                 {/* Name + Category */}
                 <div className="grid grid-cols-2 gap-3">
@@ -197,7 +243,10 @@ const Listitems = () => {
                     type="text"
                     value={editingItem.category}
                     onChange={(e) =>
-                      setEditingItem({ ...editingItem, category: e.target.value })
+                      setEditingItem({
+                        ...editingItem,
+                        category: e.target.value,
+                      })
                     }
                     className="border p-2 rounded focus:ring-2 focus:ring-blue-500"
                     placeholder="Category"
@@ -221,7 +270,10 @@ const Listitems = () => {
                     type="number"
                     value={editingItem.price}
                     onChange={(e) =>
-                      setEditingItem({ ...editingItem, price: e.target.value })
+                      setEditingItem({
+                        ...editingItem,
+                        price: e.target.value,
+                      })
                     }
                     className="border p-2 rounded focus:ring-2 focus:ring-blue-500"
                     placeholder="Price"
@@ -232,20 +284,26 @@ const Listitems = () => {
                 <textarea
                   value={editingItem.description}
                   onChange={(e) =>
-                    setEditingItem({ ...editingItem, description: e.target.value })
+                    setEditingItem({
+                      ...editingItem,
+                      description: e.target.value,
+                    })
                   }
                   className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500"
                   placeholder="Description"
                   rows="3"
                 />
 
-                {/* Available (Checkbox) */}
+                {/* Available */}
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={editingItem.available}
                     onChange={(e) =>
-                      setEditingItem({ ...editingItem, available: e.target.checked })
+                      setEditingItem({
+                        ...editingItem,
+                        available: e.target.checked,
+                      })
                     }
                     className="w-4 h-4 accent-green-600"
                   />
@@ -302,4 +360,4 @@ const Listitems = () => {
   );
 };
 
-export default Listitems;
+export default ListItems;

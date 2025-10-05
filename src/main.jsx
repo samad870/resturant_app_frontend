@@ -19,6 +19,9 @@ import PrivateRoute from "./components/admin/PrivateRoute";
 import PendingOrders from "./components/admin/order/PendingOrders";
 import CompletedOrders from "./components/admin/order/CompletedOrders";
 import CancelledOrders from "./components/admin/order/CancelledOrders";
+import Profile from "./components/admin/Profile/RestaurantForm";
+import RestaurantForm from "./components/admin/Profile/RestaurantForm";
+import UpdateProfile from "./components/admin/Profile/UpdateProfile";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
@@ -41,11 +44,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route index element={<Admin />} />
           <Route path="listItem" element={<Listitems />} />
           <Route path="addItems" element={<AddItems />} />
-          <Route path="orderlist" element={<OrdersList />} />
+          {/* <Route path="orderlist" element={<OrdersList />} /> */}
           <Route path="completedorder" element={<CompletedOrders />} />
           <Route path="pendingorder" element={<PendingOrders />} />
           <Route path="cancelledorder" element={<CancelledOrders />} />
-
+          <Route path="restaurant-detail" element={<RestaurantForm />} />
+          <Route path="profile-update" element={<UpdateProfile />} />
         </Route>
 
         <Route path="super-admin" element={<SuperAdmin />} />

@@ -1,7 +1,6 @@
-import * as React from "react"
+import * as React from "react";
 import {
   BookOpen,
-  // Bot,
   SquareMenu,
   Command,
   Frame,
@@ -11,13 +10,13 @@ import {
   Send,
   Settings2,
   SquareTerminal,
-  ScrollText
-} from "lucide-react"
+  ScrollText,
+} from "lucide-react";
 
-import { NavMain } from "@/components/admin/nav-main"
-import { NavProjects } from "@/components/admin/nav-projects"
-import { NavSecondary } from "@/components/admin/nav-secondary"
-import { NavUser } from "@/components/admin/nav-user"
+import { NavMain } from "@/components/admin/nav-main";
+import { NavProjects } from "@/components/admin/nav-projects";
+import { NavSecondary } from "@/components/admin/nav-secondary";
+import { NavUser } from "@/components/admin/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -26,11 +25,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { Link } from "react-router-dom"
+} from "@/components/ui/sidebar";
+import { Link } from "react-router-dom";
 import logo from "@/assets/tapNOrder.webp"; // Add your logo image here (PNG/WebP/SVG)
 // import AddItems from "./AddItems"
-
 
 const data = {
   user: {
@@ -39,21 +37,20 @@ const data = {
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
-     {
+    {
       title: "Details",
       url: "#",
       icon: ScrollText,
       isActive: true,
       items: [
         {
-          title: "Form",
-          url: "/admin",
+          title: "Admin Profile",
+          url: "/admin/restaurant-detail",
         },
         {
-          title: "Logo",
-          url: "#",
+          title: "Update Profile",
+          url: "/admin/profile-update",
         },
-
       ],
     },
     {
@@ -62,19 +59,20 @@ const data = {
       icon: ScrollText,
       isActive: true,
       items: [
+        // {
+        //   title: "Orders List",
+        //   url: "/admin/orderlist",
+        // },
         {
-          title: "Orders List",
-          url: "/admin/orderlist",
+          title: "Order List",
+          url: "/admin/pendingorder",
         },
-         {
+        {
           title: "Completed Order",
           url: "/admin/completedorder",
         },
+
         {
-          title: "Pending Order",
-          url: "/admin/pendingorder",
-        },   
-           {
           title: "Cancelled Order",
           url: "/admin/cancelledorder",
         },
@@ -172,15 +170,14 @@ const data = {
       icon: Map,
     },
   ],
-}
+};
 
-export function AppSidebar({
-  ...props
-}) {
+export function AppSidebar({ ...props }) {
   return (
     <Sidebar
       className=" overflow-y-auto !h-[calc(100svh-var(--header-height))]"
-      {...props}>
+      {...props}
+    >
       <SidebarHeader className="">
         <SidebarMenu>
           <SidebarMenuItem>
@@ -198,7 +195,6 @@ export function AppSidebar({
               <Link to="/admin">
                 <img src={logo} alt="Logo" className="h-12 w-auto " />
               </Link>
-
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -211,7 +207,6 @@ export function AppSidebar({
       <SidebarFooter>
         <NavUser user={data.user} />
       </SidebarFooter>
-
     </Sidebar>
   );
 }
