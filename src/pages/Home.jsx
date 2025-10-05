@@ -2,24 +2,42 @@
 
 import { useState, useEffect } from "react";
 import { useMenu } from "../hooks/useMenu";
+import { useRestaurant } from "../hooks/useRestaurant"; // separate hook
 import Header from "@/components/Client/Header";
 import SearchItem from "@/components/Client/SearchItem";
 import Filter from "@/components/Client/Filter";
 import Category from "@/components/Client/Category";
-// import OrderComplete from "@/components/Client/OrderComplete";
 import FoodListing from "@/components/Client/FoodListing";
 import Copywright from "@/components/Client/Copywright";
 import loader from "@/assets/loader.gif";
 
 export default function Home() {
-  const { data, loading, error } = useMenu();
+  const { data: menuData, loading: menuLoading, error: menuError } = useMenu();
+  const {
+    data: restaurantData,
+    loading: restaurantLoading,
+    error: restaurantError,
+  } = useRestaurant();
+  // console.log("🍽️ Restaurant Data:", restaurantData);
+  // console.log("🍽️ Restaurant items:", menuData  );
+
   const [showLoader, setShowLoader] = useState(true);
   const [filters, setFilters] = useState({ veg: false, nonVeg: false });
   const [search, setSearch] = useState("");
   const [total, setTotal] = useState(0);
   const [activeCategory, setActiveCategory] = useState(null);
 
-  // Ensure loader stays for at least 3 seconds
+  // Combine both loading states
+  const loading = menuLoading || restaurantLoading;
+  const error = menuError || restaurantError;
+
+  // Debug: print fetched restaurant data
+  // useEffect(() => {
+  //   console.log("🍽️ Restaurant Data:", restaurantData.name);
+  //   console.log("📜 Menu Data:", menuData);
+  // }, [restaurantData]);
+
+  // Ensure loader stays for at least 2 seconds
   useEffect(() => {
     let timer;
     if (loading) {
@@ -27,7 +45,7 @@ export default function Home() {
     } else {
       timer = setTimeout(() => {
         setShowLoader(false);
-      }, 2000); // min 3 seconds
+      }, 2000);
     }
     return () => clearTimeout(timer);
   }, [loading]);
@@ -35,14 +53,18 @@ export default function Home() {
   if (showLoader)
     return (
       <div className="flex justify-center items-center max-h-screen min-h-screen">
-        <img src={loader} alt="Loading..." className=" h-60" />
+        <img src={loader} alt="Loading..." className="h-60" />
       </div>
     );
 
   if (error) return <p>Error: {error}</p>;
 
-  const restaurant = data?.restaurant;
-  const menu = data?.menu || [];
+  const restaurant = restaurantData || {};
+  const menu = Array.isArray(menuData)
+    ? menuData
+    : Array.isArray(menuData?.menu)
+    ? menuData.menu
+    : [];
 
   // Apply filters (search + veg/non-veg + category)
   const filteredMenu = menu.filter((item) => {
@@ -51,16 +73,9 @@ export default function Home() {
       item.description.toLowerCase().includes(search.toLowerCase());
     if (!matchesSearch) return false;
 
-    if (filters.veg && !filters.nonVeg && item.type !== "veg") {
-      return false;
-    }
-    if (filters.nonVeg && !filters.veg && item.type !== "non-veg") {
-      return false;
-    }
-
-    if (activeCategory && item.category !== activeCategory) {
-      return false;
-    }
+    if (filters.veg && !filters.nonVeg && item.type !== "veg") return false;
+    if (filters.nonVeg && !filters.veg && item.type !== "non-veg") return false;
+    if (activeCategory && item.category !== activeCategory) return false;
 
     return true;
   });
@@ -76,7 +91,10 @@ export default function Home() {
   return (
     <>
       <div className="sticky top-0 bg-white z-20">
-        <Header logo={restaurant?.logo?.url} siteName={restaurant?.name} />
+        <Header
+          logo={restaurantData.restaurant?.logo?.url}
+          siteName={restaurantData.restaurant?.restaurantName}
+        />
         <SearchItem search={search} onSearch={setSearch} />
         <Filter filters={filters} onChange={handleFilterChange} />
         <Category
@@ -87,7 +105,6 @@ export default function Home() {
         />
       </div>
       <FoodListing menu={filteredMenu} onQuantityChange={setTotal} />
-      {/* <OrderComplete total={total} /> */}
       <Copywright />
     </>
   );
