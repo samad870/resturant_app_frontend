@@ -1,7 +1,7 @@
-export const getMenu = async () => {
+export const getRestaurant = async () => {
   try {
     const response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/menu/public` // no param added
+      `${import.meta.env.VITE_API_BASE_URL}/restaurant/public`
     );
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -9,7 +9,7 @@ export const getMenu = async () => {
     const result = await response.json();
     return result;
   } catch (error) {
-    console.error("Error fetching menu:", error);
+    console.error("Error fetching restaurant:", error);
     return [];
   }
 };

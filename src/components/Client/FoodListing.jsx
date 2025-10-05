@@ -86,24 +86,30 @@ export default function FoodListing({ menu, onQuantityChange }) {
                           Starts From Rs {item.price.toFixed(2)}
                         </span>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          className="h-6 w-6"
-                          onClick={() => decrement(item)}
-                          disabled={quantity === 0}
-                        >
-                          -
-                        </Button>
-                        <div className="border rounded-sm h-6 w-6 flex justify-center items-center">
-                          {quantity}
+                      {!item.available ? (
+                        <div className="text-red-500 text-xs font-semibold">
+                          Not Available
                         </div>
-                        <Button
-                          className="h-6 w-6"
-                          onClick={() => increment(item)}
-                        >
-                          +
-                        </Button>
-                      </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button
+                            className="h-6 w-6"
+                            onClick={() => decrement(item)}
+                            disabled={quantity === 0}
+                          >
+                            -
+                          </Button>
+                          <div className="border rounded-sm h-6 w-6 flex justify-center items-center">
+                            {quantity}
+                          </div>
+                          <Button
+                            className="h-6 w-6"
+                            onClick={() => increment(item)}
+                          >
+                            +
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
