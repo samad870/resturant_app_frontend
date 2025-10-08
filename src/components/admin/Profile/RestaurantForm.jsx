@@ -12,7 +12,7 @@ const RestaurantForm = () => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Category suggestions saved in localStorage
+  // ✅ Category suggestions saved in localStora
   const [categorySuggestions, setCategorySuggestions] = useState(() => {
     const saved = localStorage.getItem("restaurantCategories");
     return saved ? JSON.parse(saved) : [];
