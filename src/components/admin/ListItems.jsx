@@ -59,13 +59,15 @@ const ListItems = () => {
   };
 
   // ✅ Update
+  // ✅ Update function fixed
   const handleUpdate = async (e) => {
     e.preventDefault();
+
     try {
       let body;
       let headers = { Authorization: token ? `Bearer ${token}` : "" };
 
-      // If image is a File → send FormData
+      // ✅ If image is a File — send FormData
       if (editingItem.image instanceof File) {
         body = new FormData();
         body.append("name", editingItem.name);
@@ -74,7 +76,7 @@ const ListItems = () => {
         body.append("price", editingItem.price);
         body.append("description", editingItem.description);
         body.append("available", editingItem.available);
-        body.append("image", editingItem.image);
+        body.append("file", editingItem.image); // ✅ changed from "image" → "file"
       } else {
         headers["Content-Type"] = "application/json";
         body = JSON.stringify(editingItem);
@@ -86,13 +88,22 @@ const ListItems = () => {
         body,
       });
 
-      if (!res.ok) throw new Error("Failed to update");
-      const updated = await res.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to update");
 
-      setItems(items.map((i) => (i._id === updated._id ? updated : i)));
+      // ✅ Fix: the backend returns { message, item: updatedItem }
+      const updatedItem = data.item || data;
+
+      // ✅ Update local list
+      setItems((prev) =>
+        prev.map((i) => (i._id === updatedItem._id ? updatedItem : i))
+      );
+
+      // ✅ Close modal and reset
       setEditingItem(null);
+      alert("✅ Item updated successfully!");
     } catch (err) {
-      alert(err.message);
+      alert("❌ " + err.message);
     }
   };
 

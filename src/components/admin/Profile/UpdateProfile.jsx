@@ -71,36 +71,71 @@ const UpdateProfile = () => {
   };
 
   // Submit handler
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!token) {
-      alert("⚠️ No token found. Please login first.");
-      return;
+  if (!token) {
+    alert("⚠️ No token found. Please login first.");
+    return;
+  }
+
+  const newCategory = formData.category.trim();
+  if (newCategory && !categorySuggestions.includes(newCategory)) {
+    setCategorySuggestions((prev) => [...prev, newCategory]);
+  }
+
+  try {
+    setLoading(true);
+
+    // ✅ Use FormData (multipart/form-data)
+    const formDataToUpload = new FormData();
+    formDataToUpload.append("category", formData.category);
+    formDataToUpload.append("tableNumbers", formData.tableNumbers);
+    formDataToUpload.append("phoneNumber", formData.phoneNumber);
+
+    if (file) {
+      formDataToUpload.append("file", file); // this is handled by multer in backend
     }
 
-    const newCategory = formData.category.trim();
-    if (newCategory && !categorySuggestions.includes(newCategory)) {
-      setCategorySuggestions((prev) => [...prev, newCategory]);
-    }
-
-    try {
-      setLoading(true);
-
-      const payload = {
-        categories: [formData.category],
-        tableNumbers: Number(formData.tableNumbers),
-        phoneNumber: Number(formData.phoneNumber),
-        logo: {
-          url: file ? URL.createObjectURL(file) : restaurantInfo?.logo?.url,
-          public_id: formData.publicId || restaurantInfo?.logo?.public_id,
+    const res = await fetch(
+      "https://restaurant-app-backend-mihf.onrender.com/api/restaurant/",
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // ❌ DO NOT set Content-Type manually (browser sets it automatically)
         },
-      };
+        body: formDataToUpload,
+      }
+    );
 
+    const result = await res.json();
+
+    if (!res.ok)
+      throw new Error(result.message || "Failed to update restaurant");
+
+    alert("✅ Restaurant updated successfully.");
+
+    // Refresh details to show new image
+    setRestaurantInfo(result.restaurant);
+
+  } catch (error) {
+    alert("❌ " + error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  // Delete Handler
+  const deleteRestaurent = async () => {
+    // const token = localStorage.getItem("token");
+    console.log(token);
+    try {
       const res = await fetch(
-        `https://restaurant-app-backend-mihf.onrender.com/api/restaurant/`,
+        "https://restaurant-app-backend-mihf.onrender.com/api/restaurant/ ",
         {
-          method: "PUT",
+          method: "DELETE",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -109,15 +144,13 @@ const UpdateProfile = () => {
         }
       );
 
-      const result = await res.json();
+      const results = await res.json();
       if (!res.ok)
-        throw new Error(result.message || "Failed to update restaurant");
+        throw new Error(results.message || "Failed to update restaurant");
 
       alert("✅ Restaurant updated successfully.");
     } catch (error) {
-      alert("❌ " + error.message);
-    } finally {
-      setLoading(false);
+      console.log(error);
     }
   };
   return (
@@ -244,7 +277,12 @@ const UpdateProfile = () => {
       </motion.form>
 
       <div>
-        <button type="submit">Delete Restaurant</button>
+        <button
+          className="w-full bg-orange-500 text-white py-3 rounded-xl text-lg font-semibold shadow-md hover:bg-orange-600 transition"
+          onClick={deleteRestaurent}
+        >
+          Delete Restaurant
+        </button>
       </div>
     </div>
   );
