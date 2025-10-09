@@ -34,7 +34,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
 
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.items);
-  const [orderType, setOrderType] = useState(""); // "takeaway" or "eathere"
+  const [orderType, setOrderType] = useState(""); // "Take Away" or "Eat Here"
   // console.log("123456", orderType);
 
   const cartCount = Object.values(cartItems).reduce(
@@ -382,9 +382,9 @@ export default function Header({ logo, siteName = "Default Name" }) {
             <div className="flex justify-start gap-4 mb-4">
               <button
                 type="button"
-                onClick={() => setOrderType("takeaway")}
+                onClick={() => setOrderType("Take Away")}
                 className={`px-4 py-1 rounded-full border text-sm font-medium transition shadow-md ${
-                  orderType === "takeaway"
+                  orderType === "Take Away"
                     ? "bg-primary text-white border-primary"
                     : "bg-gray-100 text-gray-700 border-gray-300"
                 }`}
@@ -393,9 +393,9 @@ export default function Header({ logo, siteName = "Default Name" }) {
               </button>
               <button
                 type="button"
-                onClick={() => setOrderType("eathere")}
+                onClick={() => setOrderType("Eat Here")}
                 className={`px-4 py-1 rounded-full border text-sm font-medium transition shadow-md ${
-                  orderType === "eathere"
+                  orderType === "Eat Here"
                     ? "bg-primary text-white border-primary"
                     : "bg-gray-100 text-gray-700 border-gray-300"
                 }`}
