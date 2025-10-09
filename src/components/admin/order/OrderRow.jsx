@@ -19,6 +19,7 @@ const OrderRow = ({
       </td>
       <td className="px-6 py-4 text-gray-700">{order.customerPhone}</td>
       <td className="px-6 py-4">{order.tableId || "N/A"}</td>
+      <td className="px-6 py-4">{order.orderType}</td>
 
       <td className="px-6 py-4">
         <StatusDropdown order={order} updateOrder={updateOrder} />

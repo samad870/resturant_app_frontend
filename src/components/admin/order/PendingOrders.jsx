@@ -154,23 +154,24 @@ const PendingOrders = () => {
     }
   }, [token]);
 
-  // ✅ Fetch menu items
-  const fetchMenuItems = useCallback(async () => {
-    if (!token) return;
 
-    try {
-      const res = await fetch("https://restaurant-app-backend-mihf.onrender.com/api/menu", {
-        headers: {
-          Authorization: `Bearer ${token}`, // ✅ Send token
-        },
-      });
-      if (!res.ok) throw new Error("Failed to fetch menu items");
-      const data = await res.json();
-      setMenuItems(data);
-    } catch (err) {
-      console.error(err.message);
-    }
-  }, [token]);
+  const fetchMenuItems = useCallback(async () => {
+  if (!token) return;
+
+  try {
+    const res = await fetch("https://restaurant-app-backend-mihf.onrender.com/api/menu", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Failed to fetch menu items");
+    const data = await res.json();
+    console.log("✅ Menu API response:", data); // Debug
+    setMenuItems(Array.isArray(data) ? data : data.menu || data.data || []);
+  } catch (err) {
+    console.error(err.message);
+    setMenuItems([]); // Fallback to empty array
+  }
+}, [token]);
+
 
   // ✅ Update order
   const updateOrder = async (orderId, updatedData) => {

@@ -22,6 +22,7 @@ const OrdersTable = ({
               <th className="px-6 py-4">Customer</th>
               <th className="px-6 py-4">Phone</th>
               <th className="px-6 py-4">Table ID</th>
+              <th className="px-6 py-4">Order Type</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4">Items</th>
               <th className="px-6 py-4 text-right">Actions</th>
@@ -51,6 +52,7 @@ const OrdersTable = ({
               </tr>
             ) : (
               orders.map((order, index) => (
+                
                 <OrderRow
                   key={order._id}
                   order={order}
@@ -86,9 +88,7 @@ const OrdersTable = ({
                   <h3 className="font-bold text-gray-900">
                     Order #{300 + orders.length - index - 1}
                   </h3>
-                  <span className="text-sm text-gray-500">
-                    SL: {index + 1}
-                  </span>
+                  <span className="text-sm text-gray-500">SL: {index + 1}</span>
                 </div>
 
                 <p className="text-gray-700">
