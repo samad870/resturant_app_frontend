@@ -11,7 +11,7 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,29 +24,34 @@ const LoginPage = () => {
         "https://restaurant-app-backend-mihf.onrender.com/api/auth/login",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // 👇 backend kya expect karta hai check karo
+          body: JSON.stringify({
+            email: email.trim(),
+            password: password.trim(),
+          }),
         }
       );
 
       const data = await response.json();
-      console.log(data);
-      
-      if (response.ok) {
-        // ✅ User data localStorage mein save karo
+      console.log("API Response:", data);
+
+      if (response.ok && data?.token) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("userName", data.user?.name || "Admin");
         localStorage.setItem("userEmail", data.user?.email || email);
         localStorage.setItem("userAvatar", data.user?.avatar || "");
-        
+
         setSuccess("Login successful!");
-        navigate("/admin", { replace: true });
+        setTimeout(() => navigate("/admin", { replace: true }), 1000);
       } else {
-        setError(data.message || "Login failed, please try again.");
+        setError(data?.message || "Invalid email or password.");
       }
     } catch (err) {
-      setError("Something went wrong, please try again later.");
-      console.log(err);
+      console.error("Login error:", err);
+      setError("Unable to connect to the server. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -54,7 +59,7 @@ const LoginPage = () => {
 
   return (
     <div className="flex min-h-screen">
-      {/* Left Background Image */}
+      {/* Left Image */}
       <div className="hidden md:block md:w-1/2 relative">
         <img
           src="https://is3-ssl.mzstatic.com/image/thumb/Purple69/v4/6d/48/d6/6d48d6c3-25ee-b839-056c-0b4ebb271d8c/source/512x512bb.jpg"
@@ -63,18 +68,9 @@ const LoginPage = () => {
         />
       </div>
 
-      {/* Right Form Section */}
-      <div className="flex w-full md:w-1/2 items-center justify-center p-6 bg-white relative">
-        <div className="absolute inset-0 md:hidden">
-          <img
-            src="https://is3-ssl.mzstatic.com/image/thumb/Purple69/v4/6d/48/d6/6d48d6c3-25ee-b839-056c-0b4ebb271d8c/source/512x512bb.jpg"
-            alt="Login Background"
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/50" />
-        </div>
-
-        <Card className="relative z-10 w-full max-w-md shadow-2xl bg-white/90 backdrop-blur">
+      {/* Right Form */}
+      <div className="flex w-full md:w-1/2 items-center justify-center p-6 bg-gray-50 relative">
+        <Card className="relative z-10 w-full max-w-md shadow-xl bg-white">
           <CardHeader>
             <CardTitle className="text-center text-3xl font-bold text-gray-800">
               Welcome Back
@@ -95,7 +91,7 @@ const LoginPage = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="focus:ring-2 focus:ring-orange-500"
+                  className="focus:ring-2 focus:ring-gray-500"
                 />
               </div>
 
@@ -109,7 +105,7 @@ const LoginPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="focus:ring-2 focus:ring-orange-500"
+                  className="focus:ring-2 focus:ring-gray-500"
                 />
               </div>
 
