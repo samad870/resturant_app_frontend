@@ -1,21 +1,14 @@
 import * as React from "react";
 import {
-  BookOpen,
-  SquareMenu,
-  Command,
-  Frame,
-  LifeBuoy,
-  Map,
-  PieChart,
-  Send,
-  Settings2,
-  SquareTerminal,
   ScrollText,
+  SquareMenu,
+  LifeBuoy,
+  Send,
+  Frame,
+  PieChart,
+  Map,
 } from "lucide-react";
-
 import { NavMain } from "@/components/admin/nav-main";
-import { NavProjects } from "@/components/admin/nav-projects";
-import { NavSecondary } from "@/components/admin/nav-secondary";
 import { NavUser } from "@/components/admin/nav-user";
 import {
   Sidebar,
@@ -26,9 +19,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Link } from "react-router-dom";
-import logo from "@/assets/tapNOrder.webp"; // Add your logo image here (PNG/WebP/SVG)
-// import AddItems from "./AddItems"
+import { Link, useLocation } from "react-router-dom";
+import logo from "@/assets/tapNOrder.webp";
+import { useSidebar } from "@/components/ui/sidebar";
 
 const data = {
   user: {
@@ -43,14 +36,8 @@ const data = {
       icon: ScrollText,
       isActive: true,
       items: [
-        {
-          title: "Admin Profile",
-          url: "/admin/restaurant-detail",
-        },
-        {
-          title: "Update Profile",
-          url: "/admin/profile-update",
-        },
+        { title: "Admin Profile", url: "/admin/restaurant-detail" },
+        { title: "Update Profile", url: "/admin/profile-update" },
       ],
     },
     {
@@ -59,23 +46,9 @@ const data = {
       icon: ScrollText,
       isActive: true,
       items: [
-        // {
-        //   title: "Orders List",
-        //   url: "/admin/orderlist",
-        // },
-        {
-          title: "Order List",
-          url: "/admin/pendingorder",
-        },
-        {
-          title: "Completed Order",
-          url: "/admin/completedorder",
-        },
-
-        {
-          title: "Cancelled Order",
-          url: "/admin/cancelledorder",
-        },
+        { title: "Order List", url: "/admin/pendingorder" },
+        { title: "Completed Order", url: "/admin/completedorder" },
+        { title: "Cancelled Order", url: "/admin/cancelledorder" },
       ],
     },
     {
@@ -84,126 +57,78 @@ const data = {
       icon: SquareMenu,
       isActive: true,
       items: [
-        {
-          title: "Add Item",
-          url: "/admin/addItems",
-        },
-        {
-          title: "Item List",
-          url: "/admin/listItem",
-        },
+        { title: "Add Item", url: "/admin/addItems" },
+        { title: "Item List", url: "/admin/listItem" },
       ],
     },
-    // {
-    //   title: "Documentation",
-    //   url: "#",
-    //   icon: BookOpen,
-    //   items: [
-    //     {
-    //       title: "Introduction",
-    //       url: "#",
-    //     },
-    //     {
-    //       title: "Get Started",
-    //       url: "#",
-    //     },
-    //     {
-    //       title: "Tutorials",
-    //       url: "#",
-    //     },
-    //     {
-    //       title: "Changelog",
-    //       url: "#",
-    //     },
-    //   ],
-    // },
-    // {
-    //   title: "Settings",
-    //   url: "#",
-    //   icon: Settings2,
-    //   items: [
-    //     {
-    //       title: "General",
-    //       url: "#",
-    //     },
-    //     {
-    //       title: "Team",
-    //       url: "#",
-    //     },
-    //     {
-    //       title: "Billing",
-    //       url: "#",
-    //     },
-    //     {
-    //       title: "Limits",
-    //       url: "#",
-    //     },
-    //   ],
-    // },
+    {
+      title: "observability",
+      url: "#",
+      icon: SquareMenu,
+      isActive: true,
+      items: [
+        { title: "sales", url: "#" },
+        { title: "Revenue", url: "#" },
+      ],
+    },
   ],
   navSecondary: [
-    {
-      title: "Support",
-      url: "#",
-      icon: LifeBuoy,
-    },
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
-    },
+    { title: "Support", url: "#", icon: LifeBuoy },
+    { title: "Feedback", url: "#", icon: Send },
   ],
   projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
+    { name: "Design Engineering", url: "#", icon: Frame },
+    { name: "Sales & Marketing", url: "#", icon: PieChart },
+    { name: "Travel", url: "#", icon: Map },
   ],
 };
 
 export function AppSidebar({ ...props }) {
+  const { toggleSidebar } = useSidebar();
+  const location = useLocation();
+
+  // Auto close sidebar on route change (for mobile or small screens)
+  React.useEffect(() => {
+    if (window.innerWidth < 1024) {
+      toggleSidebar(false);
+    }
+  }, [location.pathname, toggleSidebar]);
+
   return (
     <Sidebar
-      className=" overflow-y-auto !h-[calc(100svh-var(--header-height))]"
+      className="overflow-y-auto !h-[calc(100svh-var(--header-height))]"
       {...props}
     >
-      <SidebarHeader className="">
+      {/* Header */}
+      <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild className="mt-9">
-              {/* <a href="#">
-                <div
-                  className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground ">
-                  <Command className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Acme Inc</span>
-                  <span className="truncate text-xs">Enterprise</span>
-                </div>
-              </a> */}
-              <Link to="/admin">
-                <img src={logo} alt="Logo" className="h-12 w-auto " />
+              <Link
+                to="/admin"
+                onClick={() => window.innerWidth < 1024 && toggleSidebar(false)}
+              >
+                <img src={logo} alt="Logo" className="h-12 w-auto" />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
+      {/* Main Navigation */}
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        {/* <NavProjects projects={data.projects} /> */}
-        {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
+        <NavMain
+          items={data.navMain.map((section) => ({
+            ...section,
+            items: section.items.map((item) => ({
+              ...item,
+              onClick: () => window.innerWidth < 1024 && toggleSidebar(false),
+            })),
+          }))}
+        />
       </SidebarContent>
+
+      {/* Footer */}
       <SidebarFooter>
         <NavUser user={data.user} />
       </SidebarFooter>
