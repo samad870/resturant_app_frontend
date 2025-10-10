@@ -22,6 +22,7 @@ import CancelledOrders from "./components/admin/order/CancelledOrders";
 import Profile from "./components/admin/Profile/RestaurantForm";
 import RestaurantForm from "./components/admin/Profile/RestaurantForm";
 import UpdateProfile from "./components/admin/Profile/UpdateProfile";
+import Adminprofile from "./components/admin/Profile/Adminprofile";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
@@ -50,6 +51,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="cancelledorder" element={<CancelledOrders />} />
           <Route path="restaurant-detail" element={<RestaurantForm />} />
           <Route path="profile-update" element={<UpdateProfile />} />
+          <Route path="profile" element={<Adminprofile />} />
         </Route>
 
         <Route path="super-admin" element={<SuperAdmin />} />
