@@ -29,6 +29,8 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+     --color-desktop: hsl(120, 70%, 50%); /* Green */
+  --color-mobile: hsl(30, 100%, 50%); /* Orange */
   ;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;

@@ -75,7 +75,7 @@ export function AppSidebar({ ...props }) {
         isActive: true,
         items: [
           { title: "Sales", url: "#" },
-          { title: "Revenue", url: "#" },
+          { title: "Revenue", url: "/admin/revenue" },
         ],
       },
     ],
