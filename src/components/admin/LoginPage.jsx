@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // ✅ import navigate hook
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,17 +31,14 @@ const LoginPage = () => {
 
       const data = await response.json();
       console.log(data);
-      
-      if (response.ok) {
-        // ✅ User data localStorage mein save karo
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("userName", data.user?.name || "Admin");
-        localStorage.setItem("userEmail", data.user?.email || email);
-        localStorage.setItem("userAvatar", data.user?.avatar || "");
-        
-        setSuccess("Login successful!");
-        navigate("/admin", { replace: true });
-      } else {
+     if (response.ok) {
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("userName", data.user?.name || "Admin");
+  localStorage.setItem("userEmail", data.user?.email || email);
+  setSuccess("Login successful!");
+  navigate("/admin", { replace: true });
+}
+ else {
         setError(data.message || "Login failed, please try again.");
       }
     } catch (err) {

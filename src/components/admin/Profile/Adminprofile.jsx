@@ -1,130 +1,95 @@
-import React from "react";
+// AdminProfileView.jsx
+import React, { useEffect, useState } from "react";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
 
-const Adminprofile = () => {
-  // Static Data (temporary)
-  const profileData = {
-    name: "samad",
-    email: "samad@gmail.com",
+const AdminProfileView = () => {
+  const [profileData, setProfileData] = useState({
+    name: "",
+    email: "",
     password: "********",
-    domain: "Food Delivery Management",
-    restaurantName: "Tasty Bites Restaurant",
+    domain: "",
+    restaurantName: "",
+  });
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    // Fetch data from localStorage or API
+    const fetchData = () => {
+      setProfileData({
+        name: localStorage.getItem("userName") || "Admin User",
+        email: localStorage.getItem("userEmail") || "admin@restaurant.com",
+        password: "********",
+        domain: localStorage.getItem("userDomain") || "Food & Beverage",
+        restaurantName: localStorage.getItem("userRestaurant") || "Fine Dine Restaurant",
+      });
+    };
+    fetchData();
+  }, []);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const getPasswordDisplay = () => {
+    return showPassword ? "yourpassword123" : "********";
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-4">
+    <div className="min-h-screen  py-8 px-4">
       <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        {/* <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-gray-800">Admin Profile</h1>
-          <p className="text-gray-500 mt-2">
-            Manage your account and business information
-          </p>
-        </div> */}
+        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">Admin Profile</h1>
 
-        {/* Profile Card */}
-        <div className="bg-white shadow-md rounded-2xl overflow-hidden border border-gray-200">
-          {/* Top Section */}
-          <div className="bg-gradient-to-r from-gray-700 to-gray-600 px-6 py-8 flex items-center space-x-5">
-            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-inner">
-              <span className="text-3xl font-bold text-gray-700">
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-orange-100">
+          {/* Top Gradient Section */}
+          <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-8 py-8 flex items-center space-x-6">
+            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg border-4 border-white">
+              <span className="text-3xl font-bold text-orange-600">
                 {profileData.name.charAt(0)}
               </span>
             </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-white">
-                {profileData.name}
-              </h2>
-              <p className="text-gray-300 text-sm">{profileData.email}</p>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-white mb-1">{profileData.name}</h2>
+              <p className="text-orange-100 text-sm">{profileData.email}</p>
+              <div className="flex items-center mt-2 space-x-2">
+                <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">
+                  {profileData.domain}
+                </span>
+                <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">
+                  Administrator
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Profile Details */}
-          <div className="p-6 space-y-5">
-            {[
-              {
-                label: "Full Name",
-                value: profileData.name,
-                icon: (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                ),
-              },
-              {
-                label: "Email Address",
-                value: profileData.email,
-                icon: (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                ),
-              },
-              {
-                label: "Password",
-                value: profileData.password,
-                icon: (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                  />
-                ),
-              },
-              {
-                label: "Business Domain",
-                value: profileData.domain,
-                icon: (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"
-                  />
-                ),
-              },
-              {
-                label: "Restaurant Name",
-                value: profileData.restaurantName,
-                icon: (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                  />
-                ),
-              },
-            ].map((item, idx) => (
+          <div className="p-8 space-y-6">
+            {Object.keys(profileData).map((key, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-4 rounded-lg border border-gray-200 transition-colors duration-200"
+                className={`flex flex-col p-5 rounded-xl border bg-gray-50 border-gray-200`}
               >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                    <svg
-                      className="w-5 h-5 text-gray-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                <label className="text-sm font-medium text-gray-600 mb-2 flex items-center">
+                  {formatLabel(key)}
+                </label>
+
+                <div className="flex items-center justify-between">
+                  <p className="text-lg font-semibold text-gray-800">
+                    {key === "password" ? getPasswordDisplay() : profileData[key]}
+                  </p>
+
+                  {/* Eye icon for password */}
+                  {key === "password" && (
+                    <button
+                      onClick={togglePasswordVisibility}
+                      className="ml-3 p-1 text-gray-500 hover:text-orange-600 transition-colors duration-200"
                     >
-                      {item.icon}
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 font-medium">
-                      {item.label}
-                    </p>
-                    <p className="text-base font-semibold text-gray-800">
-                      {item.value}
-                    </p>
-                  </div>
+                      {showPassword ? (
+                        <EyeSlashIcon className="w-5 h-5" />
+                      ) : (
+                        <EyeIcon className="w-5 h-5" />
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -135,4 +100,15 @@ const Adminprofile = () => {
   );
 };
 
-export default Adminprofile;
+const formatLabel = (key) => {
+  const labels = {
+    name: "Full Name",
+    email: "Email Address",
+    password: "Password",
+    domain: "Business Domain",
+    restaurantName: "Restaurant Name",
+  };
+  return labels[key] || key;
+};
+
+export default AdminProfileView;
