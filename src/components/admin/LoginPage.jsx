@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ import navigate hook
+import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,41 +9,40 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setSuccess("");
 
     try {
-      const response = await fetch(
-        "https://restaurant-app-backend-mihf.onrender.com/api/auth/login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      const response = await fetch("http://31.97.231.105:4000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
       const data = await response.json();
-      console.log(data);
-     if (response.ok) {
-  localStorage.setItem("token", data.token);
-  localStorage.setItem("userName", data.user?.name || "Admin");
-  localStorage.setItem("userEmail", data.user?.email || email);
-  setSuccess("Login successful!");
-  navigate("/admin", { replace: true });
-}
- else {
+      console.log("✅ Login Response:", data);
+
+      if (response.ok) {
+        // Save all required data in localStorage
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("userName", data.name || "Admin");
+        localStorage.setItem("userEmail", data.email || email);
+        localStorage.setItem("restaurantName", data.restaurantName || "");
+        localStorage.setItem("qrCode", data.qrCode || "");
+        localStorage.setItem("userPassword", password);
+
+        navigate("/admin", { replace: true });
+      } else {
         setError(data.message || "Login failed, please try again.");
       }
     } catch (err) {
+      console.error("❌ Login Error:", err);
       setError("Something went wrong, please try again later.");
-      console.log(err);
     } finally {
       setLoading(false);
     }
@@ -51,7 +50,6 @@ const LoginPage = () => {
 
   return (
     <div className="flex min-h-screen">
-      {/* Left Background Image */}
       <div className="hidden md:block md:w-1/2 relative">
         <img
           src="https://is3-ssl.mzstatic.com/image/thumb/Purple69/v4/6d/48/d6/6d48d6c3-25ee-b839-056c-0b4ebb271d8c/source/512x512bb.jpg"
@@ -60,7 +58,6 @@ const LoginPage = () => {
         />
       </div>
 
-      {/* Right Form Section */}
       <div className="flex w-full md:w-1/2 items-center justify-center p-6 bg-white relative">
         <div className="absolute inset-0 md:hidden">
           <img
@@ -111,7 +108,6 @@ const LoginPage = () => {
               </div>
 
               {error && <p className="text-red-500 text-sm">{error}</p>}
-              {success && <p className="text-green-500 text-sm">{success}</p>}
 
               <Button
                 type="submit"

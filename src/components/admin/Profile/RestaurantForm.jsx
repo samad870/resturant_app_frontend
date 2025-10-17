@@ -77,7 +77,7 @@ const RestaurantForm = () => {
       };
 
       const res = await fetch(
-        "https://restaurant-app-backend-mihf.onrender.com/api/restaurant/details",
+        "http://31.97.231.105:4000/api/restaurant/details",
         {
           method: "POST",
           headers: {

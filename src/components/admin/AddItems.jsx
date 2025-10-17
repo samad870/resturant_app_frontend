@@ -80,7 +80,7 @@ const ProductForm = () => {
       data.append("file", file);
 
       const res = await fetch(
-        "https://restaurant-app-backend-mihf.onrender.com/api/menu/",
+        "http://31.97.231.105:4000/api/menu/",
         {
           method: "POST",
           headers: {

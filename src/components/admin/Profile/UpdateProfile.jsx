@@ -28,7 +28,7 @@ const UpdateProfile = () => {
     const fetchDetails = async () => {
       try {
         const res = await fetch(
-          "https://restaurant-app-backend-mihf.onrender.com/api/restaurant/admin",
+          "http://31.97.231.105:4000/api/restaurant/admin",
           {
             headers: {
               Authorization: `Bearer ${token}`,
