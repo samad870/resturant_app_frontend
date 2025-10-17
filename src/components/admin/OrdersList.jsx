@@ -1,3 +1,5 @@
+import { MdModeEdit } from "react-icons/md";
+
 import React, { useEffect, useState } from "react";
 
 const OrdersList = () => {
@@ -9,7 +11,7 @@ const OrdersList = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState(null);
 
-  const API_URL = "http://31.97.231.105:4000/api/order";
+  const API_URL = "https://api.flamendough.com/api/order";
 
   const recalcTotal = (items) =>
     items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -31,7 +33,7 @@ const OrdersList = () => {
   const fetchMenuItems = async () => {
     try {
       const res = await fetch(
-        "https://restaurant-app-backend-mihf.onrender.com/api/menu"
+        "https://api.flamendough.com/api/menu"
       );
       if (!res.ok) throw new Error("Failed to fetch menu items");
       const data = await res.json();
@@ -169,7 +171,8 @@ const OrdersList = () => {
                           onClick={() => setEditingOrder(order)}
                           className="px-3 py-1 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition font-medium"
                         >
-                          ✏️ Edit
+                         <MdModeEdit />
+
                         </button>
                         <button
                           onClick={() => setShowConfirmDelete(order)}

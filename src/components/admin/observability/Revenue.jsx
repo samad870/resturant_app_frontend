@@ -52,7 +52,7 @@ export default function RevenueWithDatePicker() {
       }
 
       const params = new URLSearchParams({ domain: userDomain })
-      const url = `http://31.97.231.105:4000/api/analytics/insights?${params.toString()}`
+      const url = `https://api.flamendough.com/api/analytics/insights?${params.toString()}`
       const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -270,8 +270,8 @@ export default function RevenueWithDatePicker() {
             {loading ? "Loading..." : getFilterDescription()}
           </CardDescription>
           <div className="mt-2 text-sm">
-            <span className="font-semibold text-orange-600">{currentFilter === "all" ? "Total Orders:" : "Filtered Orders:"}</span> {getDisplayOrders()} |{" "}
-            <span className="font-semibold text-orange-600">{currentFilter === "all" ? "Total Revenue:" : "Filtered Revenue:"}</span> {formatCurrency(getDisplayRevenue())}
+            <span className="font-semibold text-orange-600">{currentFilter === "all" ? "Total Orders:" : "Total Orders:"}</span> {getDisplayOrders()} |{" "}
+            <span className="font-semibold text-orange-600">{currentFilter === "all" ? "Total Revenue:" : "Total Revenue:"}</span> {formatCurrency(getDisplayRevenue())}
           </div>
         </div>
 

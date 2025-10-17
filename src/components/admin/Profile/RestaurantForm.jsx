@@ -12,7 +12,7 @@ const RestaurantForm = () => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Category suggestions saved in localStora
+  // ✅ Category suggestions saved in localStorage
   const [categorySuggestions, setCategorySuggestions] = useState(() => {
     const saved = localStorage.getItem("restaurantCategories");
     return saved ? JSON.parse(saved) : [];
@@ -29,13 +29,24 @@ const RestaurantForm = () => {
     );
   }, [categorySuggestions]);
 
-  // Input handler
+  // Input handler - Prevent text in number fields
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    // For number fields, only allow numbers
+    if (name === "tableNumbers" || name === "phoneNumber") {
+      // Remove any non-digit characters
+      const numericValue = value.replace(/\D/g, '');
+      setFormData((prev) => ({
+        ...prev,
+        [name]: numericValue,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   // File handler
@@ -54,6 +65,18 @@ const RestaurantForm = () => {
 
     if (!token) {
       alert("⚠️ No token found. Please login first.");
+      return;
+    }
+
+    // Validate table numbers (max 10 digits)
+    if (formData.tableNumbers.length > 10) {
+      alert("Table numbers cannot exceed 10 digits");
+      return;
+    }
+
+    // Validate phone number (exactly 10 digits)
+    if (formData.phoneNumber.length !== 10) {
+      alert("Phone number must be exactly 10 digits");
       return;
     }
 
@@ -77,7 +100,7 @@ const RestaurantForm = () => {
       };
 
       const res = await fetch(
-        "http://31.97.231.105:4000/api/restaurant/details",
+        "https://api.flamendough.com/api/restaurant/details",
         {
           method: "POST",
           headers: {
@@ -108,111 +131,168 @@ const RestaurantForm = () => {
     }
   };
 
+  // Prevent paste of non-numeric values in number fields
+  const handlePaste = (e) => {
+    if (e.target.name === "tableNumbers" || e.target.name === "phoneNumber") {
+      const pasteData = e.clipboardData.getData('text');
+      if (!/^\d+$/.test(pasteData)) {
+        e.preventDefault();
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
-      <motion.form
-        onSubmit={handleSubmit}
-        className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-8 space-y-6"
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h2 className="text-3xl font-bold text-gray-900 text-center">
-          🏨 Restaurant Profile
-        </h2>
-
-        {/* Row 1: Category + Table Numbers */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Category
-            </label>
-            <input
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
-              list="category-suggestions"
-              className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
-              placeholder="e.g. Indian, Chinese"
-            />
-            <datalist id="category-suggestions">
-              {categorySuggestions.map((cat, idx) => (
-                <option key={idx} value={cat} />
-              ))}
-            </datalist>
-          </div>
-
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Table Numbers
-            </label>
-            <input
-              type="number"
-              name="tableNumbers"
-              value={formData.tableNumbers}
-              onChange={handleChange}
-              required
-              className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
-              placeholder="e.g. 25"
-            />
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
+      <div className="max-w-3xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">
+            Restaurant Profile Setup
+          </h1>
+          <p className="text-gray-600 text-lg">
+            Complete your restaurant information to get started
+          </p>
         </div>
 
-        {/* Row 2: Phone + Public ID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Phone Number
-            </label>
-            <input
-              type="number"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              required
-              className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
-              placeholder="e.g. 9876543210"
-            />
-          </div>
-
-          <div>
-            {/* <label className="block text-gray-700 font-medium mb-1">
-              Public ID
-            </label>
-            <input
-              name="publicId"
-              value={formData.publicId}
-              onChange={handleChange}
-              className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
-              placeholder="Logo public_id"
-            /> */}
-          </div>
-        </div>
-
-        {/* File Upload */}
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Logo</label>
-          <input
-            type="file"
-            onChange={handleFileChange}
-            className="w-full border rounded-xl p-3 cursor-pointer"
-          />
-          {file && (
-            <p className="text-sm text-gray-500 mt-2">Selected: {file.name}</p>
-          )}
-        </div>
-
-        {/* Submit */}
-        <motion.button
-          type="submit"
-          disabled={loading}
-          whileTap={{ scale: 0.95 }}
-          className="w-full bg-orange-500 text-white py-3 rounded-xl text-lg font-semibold shadow-md hover:bg-orange-600 transition"
+        <motion.form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         >
-          {loading ? "Saving..." : "Save Restaurant"}
-        </motion.button>
-      </motion.form>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center">
+              <span className="text-white text-lg">🏨</span>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Restaurant Details</h2>
+              <p className="text-gray-600">Fill in your restaurant information</p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {/* Row 1: Category + Table Numbers */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Restaurant Category
+                </label>
+                <div className="relative">
+                  <input
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    required
+                    list="category-suggestions"
+                    className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
+                    placeholder="e.g. Indian, Chinese, Italian"
+                  />
+                  <datalist id="category-suggestions">
+                    {categorySuggestions.map((cat, idx) => (
+                      <option key={idx} value={cat} />
+                    ))}
+                  </datalist>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Choose from suggestions or type new</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Number of Tables
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  // pattern="[0-9]*"
+                  name="tableNumbers"
+                  value={formData.tableNumbers}
+                  onChange={handleChange}
+                  onPaste={handlePaste}
+                  required
+                  // maxLength={10}
+                  className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
+                  placeholder="e.g. 25"
+                />
+                {/* <p className="text-xs text-gray-500 mt-2">Maximum 10 digits allowed</p> */}
+              </div>
+            </div>
+
+            {/* Row 2: Phone */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Phone Number
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                onPaste={handlePaste}
+                required
+                maxLength={10}
+                className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
+                placeholder="e.g. 9876543210"
+              />
+              <p className="text-xs text-gray-500 mt-2">Must be exactly 10 digits</p>
+            </div>
+
+            {/* File Upload */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Restaurant Logo
+              </label>
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-orange-400 transition-colors cursor-pointer bg-gray-50">
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="logo-upload"
+                  accept="image/*"
+                />
+                <label htmlFor="logo-upload" className="cursor-pointer">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <span className="text-3xl">📁</span>
+                    <div>
+                      <p className="text-gray-700 font-medium">
+                        {file ? file.name : "Click to upload logo"}
+                      </p>
+                      <p className="text-sm text-gray-500">PNG, JPG, JPEG up to 5MB</p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+              {file && (
+                <p className="text-sm text-green-600 mt-2 flex items-center gap-2">
+                  <span>✅</span> Selected: {file.name}
+                </p>
+              )}
+            </div>
+
+            {/* Submit Button */}
+            <motion.button
+              type="submit"
+              disabled={loading}
+              whileTap={{ scale: 0.95 }}
+              className="w-full bg-orange-500 text-white py-4 rounded-xl text-lg font-semibold shadow-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <span>💾</span>
+                  Save Restaurant Details
+                </>
+              )}
+            </motion.button>
+          </div>
+        </motion.form>
+      </div>
     </div>
   );
 };

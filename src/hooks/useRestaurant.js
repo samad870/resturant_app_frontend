@@ -10,7 +10,7 @@ export function useRestaurant() {
     async function fetchRestaurant() {
       try {
         const data = await getRestaurant();
-        console.log(data)
+        // console.log(data)
         setRestaurant(data);
       } catch (err) {
         setError(err.message || "Error fetching restaurant");

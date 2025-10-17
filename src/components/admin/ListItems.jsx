@@ -10,7 +10,7 @@ const ListItems = () => {
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("category");
 
-  const API_URL = "http://31.97.231.105:4000/api/menu";
+  const API_URL = "https://api.flamendough.com/api/menu";
   const token = localStorage.getItem("token");
 
   // ✅ Fetch Data
@@ -29,7 +29,7 @@ const ListItems = () => {
       });
 
       const data = await res.json();
-      console.log("API response:", data);
+      // console.log("API response:", data);
 
       if (Array.isArray(data.menu)) {
         setItems(data.menu);

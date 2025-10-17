@@ -16,7 +16,7 @@ const CompletedOrders = () => {
   // ✅ Token from localStorage (only use token, no setter needed)
   const [token] = useState(() => localStorage.getItem("token") || "");
 
-  const API_URL = "http://31.97.231.105:4000/api/order";
+  const API_URL = "https://api.flamendough.com/api/order";
 
   // Fetch all orders
   const fetchOrders = async () => {
@@ -29,7 +29,7 @@ const CompletedOrders = () => {
       });
       if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
-      console.log(data)
+      // console.log(data)
       setOrders(data.reverse());
     } catch (err) {
       setError(err.message);
@@ -43,17 +43,17 @@ const CompletedOrders = () => {
 
     try {
       const res = await fetch(
-        "https://restaurant-app-backend-mihf.onrender.com/api/menu",
+        "https://api.flamendough.com/api/menu",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
       if (!res.ok) throw new Error("Failed to fetch menu items");
       const data = await res.json();
-      console.log("✅ Menu API response:", data); // Debug
+      // console.log("✅ Menu API response:", data); 
       setMenuItems(Array.isArray(data) ? data : data.menu || data.data || []);
     } catch (err) {
-      console.error(err.message);
+      // console.error(err.message);
       setMenuItems([]); // Fallback to empty array
     }
   }, [token]);

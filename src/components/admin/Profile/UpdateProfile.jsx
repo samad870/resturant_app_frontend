@@ -14,21 +14,19 @@ const UpdateProfile = () => {
   const [restaurantId, setRestaurantId] = useState("");
   const [restaurantInfo, setRestaurantInfo] = useState(null);
 
-  // ✅ Category suggestions saved in localStorage
   const [categorySuggestions, setCategorySuggestions] = useState(() => {
     const saved = localStorage.getItem("restaurantCategories");
     return saved ? JSON.parse(saved) : [];
   });
 
-  // ✅ Token from localStorage
   const [token] = useState(() => localStorage.getItem("token") || "");
 
-  // ✅ Fetch restaurant details
+  // Fetch restaurant details
   useEffect(() => {
     const fetchDetails = async () => {
       try {
         const res = await fetch(
-          "http://31.97.231.105:4000/api/restaurant/admin",
+          "https://api.flamendough.com/api/restaurant/admin",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -40,7 +38,7 @@ const UpdateProfile = () => {
         if (res.ok && data.restaurant) {
           const r = data.restaurant;
           setRestaurantId(r._id);
-          setRestaurantInfo(r); // ✅ Save full info
+          setRestaurantInfo(r);
           setFormData({
             category: r.categories?.[0] || "",
             tableNumbers: r.tableNumbers || "",
@@ -56,161 +54,188 @@ const UpdateProfile = () => {
     if (token) fetchDetails();
   }, [token]);
 
-  // Input handler
+  // ✅ Updated handleChange with 10-digit phone restriction
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    if (name === "phoneNumber") {
+      const onlyDigits = value.replace(/\D/g, "");
+      if (onlyDigits.length <= 10) {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: onlyDigits,
+        }));
+      }
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
-  // File handler
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
-  // Submit handler
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!token) {
-    alert("⚠️ No token found. Please login first.");
-    return;
-  }
-
-  const newCategory = formData.category.trim();
-  if (newCategory && !categorySuggestions.includes(newCategory)) {
-    setCategorySuggestions((prev) => [...prev, newCategory]);
-  }
-
-  try {
-    setLoading(true);
-
-    // ✅ Use FormData (multipart/form-data)
-    const formDataToUpload = new FormData();
-    formDataToUpload.append("category", formData.category);
-    formDataToUpload.append("tableNumbers", formData.tableNumbers);
-    formDataToUpload.append("phoneNumber", formData.phoneNumber);
-
-    if (file) {
-      formDataToUpload.append("file", file); // this is handled by multer in backend
+    if (!token) {
+      alert("⚠️ No token found. Please login first.");
+      return;
     }
 
-    const res = await fetch(
-      "https://restaurant-app-backend-mihf.onrender.com/api/restaurant/",
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          // ❌ DO NOT set Content-Type manually (browser sets it automatically)
-        },
-        body: formDataToUpload,
+    const newCategory = formData.category.trim();
+    if (newCategory && !categorySuggestions.includes(newCategory)) {
+      const updatedSuggestions = [...categorySuggestions, newCategory];
+      setCategorySuggestions(updatedSuggestions);
+      localStorage.setItem("restaurantCategories", JSON.stringify(updatedSuggestions));
+    }
+
+    try {
+      setLoading(true);
+
+      const formDataToUpload = new FormData();
+      formDataToUpload.append("category", formData.category);
+      formDataToUpload.append("tableNumbers", formData.tableNumbers);
+      formDataToUpload.append("phoneNumber", formData.phoneNumber);
+
+      if (file) {
+        formDataToUpload.append("file", file);
       }
-    );
 
-    const result = await res.json();
+      const res = await fetch(
+        "https://api.flamendough.com/api/restaurant/",
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formDataToUpload,
+        }
+      );
 
-    if (!res.ok)
-      throw new Error(result.message || "Failed to update restaurant");
+      const result = await res.json();
 
-    alert("✅ Restaurant updated successfully.");
+      if (!res.ok)
+        throw new Error(result.message || "Failed to update restaurant");
 
-    // Refresh details to show new image
-    setRestaurantInfo(result.restaurant);
+      alert("✅ Restaurant updated successfully.");
+      setRestaurantInfo(result.restaurant);
 
-  } catch (error) {
-    alert("❌ " + error.message);
-  } finally {
-    setLoading(false);
-  }
-};
+    } catch (error) {
+      alert("❌ " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const deleteRestaurant = async () => {
+    if (!window.confirm("Are you sure you want to delete this restaurant? This action cannot be undone.")) {
+      return;
+    }
 
-  // Delete Handler
-  const deleteRestaurent = async () => {
-    // const token = localStorage.getItem("token");
-    console.log(token);
     try {
       const res = await fetch(
-        "https://restaurant-app-backend-mihf.onrender.com/api/restaurant/ ",
+        "https://api.flamendough.com/api/restaurant/",
         {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(payload),
         }
       );
 
       const results = await res.json();
       if (!res.ok)
-        throw new Error(results.message || "Failed to update restaurant");
+        throw new Error(results.message || "Failed to delete restaurant");
 
-      alert("✅ Restaurant updated successfully.");
+      alert("✅ Restaurant deleted successfully.");
     } catch (error) {
-      console.log(error);
+      alert("❌ " + error.message);
     }
   };
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
-      {/* ✅ Info Card */}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-8">
       {restaurantInfo && (
-        <div className="w-full max-w-3xl bg-black text-white rounded-2xl shadow-md p-6 mb-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-3">
-            🍴 Restaurant Info
+        <motion.div 
+          className="w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <span className="text-orange-500">🏨</span>
+            Restaurant Information
           </h3>
-          {restaurantInfo.name && (
-            <p className="text-lg font-bold text-gray-900 mb-2">
-              {restaurantInfo.name}
-            </p>
-          )}
-          <p>
-            <strong>Category:</strong>{" "}
-            {restaurantInfo.categories?.join(", ") || "N/A"}
-          </p>
-          <p>
-            <strong>Tables:</strong> {restaurantInfo.tableNumbers || "N/A"}
-          </p>
-          <p>
-            <strong>Phone:</strong> {restaurantInfo.phoneNumber || "N/A"}
-          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              {restaurantInfo.name && (
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Name</p>
+                  <p className="text-lg font-semibold text-gray-900">{restaurantInfo.name}</p>
+                </div>
+              )}
+              
+              <div>
+                <p className="text-sm font-medium text-gray-500">Category</p>
+                <p className="text-gray-900 font-medium">
+                  {restaurantInfo.categories?.join(", ") || "N/A"}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Tables</p>
+                <p className="text-gray-900 font-medium">{restaurantInfo.tableNumbers || "N/A"}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-gray-500">Phone</p>
+                <p className="text-gray-900 font-medium">{restaurantInfo.phoneNumber || "N/A"}</p>
+              </div>
+            </div>
+          </div>
+
           {restaurantInfo.logo?.url && (
-            <img
-              src={restaurantInfo.logo.url}
-              alt="Logo"
-              className="h-16 mt-3 rounded"
-            />
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <p className="text-sm font-medium text-gray-500 mb-2">Current Logo</p>
+              <img
+                src={restaurantInfo.logo.url}
+                alt="Restaurant Logo"
+                className="h-20 rounded-lg border border-gray-200"
+              />
+            </div>
           )}
-        </div>
+        </motion.div>
       )}
 
-      {/* ✅ Update Form */}
       <motion.form
         onSubmit={handleSubmit}
-        className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-8 space-y-6"
-        initial={{ opacity: 0, y: 50 }}
+        className="w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-gray-200 p-8 space-y-6"
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <h2 className="text-3xl font-bold text-gray-900 text-center">
-          🏨 Update Restaurant
+        <h2 className="text-2xl font-bold text-gray-900 text-center flex items-center justify-center gap-2">
+          <span className="text-orange-500">⚙️</span>
+          Update Restaurant Profile
         </h2>
 
-        {/* Row 1: Category + Tables */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Category
-            </label>
+            <label className="block text-gray-700 font-semibold mb-2">Category</label>
             <input
               name="category"
               value={formData.category}
               onChange={handleChange}
               required
               list="category-suggestions"
-              className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
+              className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
               placeholder="e.g. Indian, Chinese"
             />
             <datalist id="category-suggestions">
@@ -218,72 +243,97 @@ const handleSubmit = async (e) => {
                 <option key={idx} value={cat} />
               ))}
             </datalist>
+            <p className="text-xs text-gray-500 mt-1">Select from suggestions or type new</p>
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Table Numbers
-            </label>
+            <label className="block text-gray-700 font-semibold mb-2">Table Numbers</label>
             <input
               type="number"
               name="tableNumbers"
               value={formData.tableNumbers}
               onChange={handleChange}
               required
-              className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
+              min="1"
+              className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
               placeholder="e.g. 25"
             />
           </div>
         </div>
 
-        {/* Row 2: Phone */}
         <div>
-          <label className="block text-gray-700 font-medium mb-1">
-            Phone Number
-          </label>
+          <label className="block text-gray-700 font-semibold mb-2">Phone Number</label>
           <input
-            type="number"
+            type="tel"
             name="phoneNumber"
             value={formData.phoneNumber}
             onChange={handleChange}
             required
-            className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-orange-400 outline-none"
+            className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
             placeholder="e.g. 9876543210"
           />
         </div>
 
-        {/* File Upload */}
         <div>
-          <label className="block text-gray-700 font-medium mb-1">Logo</label>
-          <input
-            type="file"
-            onChange={handleFileChange}
-            className="w-full border rounded-xl p-3 cursor-pointer"
-          />
+          <label className="block text-gray-700 font-semibold mb-2">Restaurant Logo</label>
+          <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-orange-400 transition-colors bg-gray-50">
+            <input
+              type="file"
+              onChange={handleFileChange}
+              className="hidden"
+              id="logo-upload"
+              accept="image/*"
+            />
+            <label htmlFor="logo-upload" className="cursor-pointer">
+              <div className="flex flex-col items-center justify-center gap-2">
+                <span className="text-2xl">📁</span>
+                <div>
+                  <p className="text-gray-700 font-medium">
+                    {file ? file.name : "Click to upload logo"}
+                  </p>
+                  <p className="text-sm text-gray-500">PNG, JPG, JPEG up to 5MB</p>
+                </div>
+              </div>
+            </label>
+          </div>
           {file && (
-            <p className="text-sm text-gray-500 mt-2">Selected: {file.name}</p>
+            <p className="text-sm text-green-600 mt-2 flex items-center gap-2">
+              <span>✅</span> Selected: {file.name}
+            </p>
           )}
         </div>
 
-        {/* Submit */}
-        <motion.button
-          type="submit"
-          disabled={loading}
-          whileTap={{ scale: 0.95 }}
-          className="w-full bg-orange-500 text-white py-3 rounded-xl text-lg font-semibold shadow-md hover:bg-orange-600 transition"
-        >
-          {loading ? "Updating..." : "Update Restaurant"}
-        </motion.button>
-      </motion.form>
+        <div className="flex flex-col sm:flex-row gap-4 pt-4">
+          <motion.button
+            type="submit"
+            disabled={loading}
+            whileTap={{ scale: 0.95 }}
+            className="flex-1 bg-orange-500 text-white py-4 rounded-xl text-lg font-semibold shadow-sm hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Updating...
+              </>
+            ) : (
+              <>
+                <span>💾</span>
+                Update Restaurant
+              </>
+            )}
+          </motion.button>
 
-      <div>
-        <button
-          className="w-full bg-orange-500 text-white py-3 rounded-xl text-lg font-semibold shadow-md hover:bg-orange-600 transition"
-          onClick={deleteRestaurent}
-        >
-          Delete Restaurant
-        </button>
-      </div>
+          <motion.button
+            type="button"
+            onClick={deleteRestaurant}
+            whileTap={{ scale: 0.95 }}
+            className="px-8 py-4 border border-red-300 text-red-600 rounded-xl font-semibold hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+          >
+            <span>🗑️</span>
+            Delete Restaurant
+          </motion.button>
+        </div>
+      </motion.form>
     </div>
   );
 };

@@ -1,5 +1,7 @@
 import React from "react";
 import OrderRow from "./OrderRow";
+import { MdModeEdit } from "react-icons/md";
+import { MdDelete } from "react-icons/md";
 
 const OrdersTable = ({
   orders,
@@ -138,13 +140,13 @@ const OrdersTable = ({
                     onClick={() => setEditingOrder(order)}
                     className="px-3 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition font-medium"
                   >
-                    ✏️ Edit
+                   <MdModeEdit />
                   </button>
                   <button
                     onClick={() => setShowConfirmDelete(order)}
                     className="px-3 py-1 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition font-medium"
                   >
-                    🗑 Delete
+                    <MdDelete />
                   </button>
                 </div>
               </div>

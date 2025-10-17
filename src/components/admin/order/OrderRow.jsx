@@ -1,5 +1,8 @@
 import React from "react";
 import StatusDropdown from "./StatusDropdown";
+import { MdModeEdit } from "react-icons/md";
+import { MdDelete } from "react-icons/md";
+
 
 const OrderRow = ({
   order,
@@ -25,27 +28,27 @@ const OrderRow = ({
         <StatusDropdown order={order} updateOrder={updateOrder} />
       </td>
 
-      <td className="px-6 py-4">
+      <td className="px-6 py-4 ">
         <button
           onClick={() => setSelectedItems(order)}
-          className="px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition font-medium"
+          className="px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition font-medium "
         >
           View Items
         </button>
       </td>
 
-      <td className="px-6 py-4 text-right space-x-2">
+      <td className="px-6 py-4 text-right space-x-2 flex">
         <button
           onClick={() => setEditingOrder(order)}
           className="px-3 py-1 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition font-medium"
         >
-          ✏️ Edit
+          <MdModeEdit size={20}/>
         </button>
         <button
           onClick={() => setShowConfirmDelete(order)}
           className="px-3 py-1 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 transition font-medium"
         >
-          🗑 Delete
+        <MdDelete size={20}/>
         </button>
       </td>
     </tr>
