@@ -10,7 +10,7 @@ const ListItems = () => {
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("category");
 
-  const API_URL = "https://restaurant-app-backend-mihf.onrender.com/api/menu";
+  const API_URL = "http://31.97.231.105:4000/api/menu";
   const token = localStorage.getItem("token");
 
   // ✅ Fetch Data

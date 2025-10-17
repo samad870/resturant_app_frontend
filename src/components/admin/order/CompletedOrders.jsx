@@ -16,7 +16,7 @@ const CompletedOrders = () => {
   // ✅ Token from localStorage (only use token, no setter needed)
   const [token] = useState(() => localStorage.getItem("token") || "");
 
-  const API_URL = "https://restaurant-app-backend-mihf.onrender.com/api/order";
+  const API_URL = "http://31.97.231.105:4000/api/order";
 
   // Fetch all orders
   const fetchOrders = async () => {

@@ -112,7 +112,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
 
       const response = await fetch(
         // `https://restaurant-app-backend-mihf.onrender.com/api/order/${restaurantId}`,
-        "https://restaurant-app-backend-mihf.onrender.com/api/order",
+        "http://31.97.231.105:4000/api/order",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

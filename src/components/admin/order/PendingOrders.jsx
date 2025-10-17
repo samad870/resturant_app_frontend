@@ -131,7 +131,7 @@ const PendingOrders = () => {
   // ✅ Token from localStorage
   const [token] = useState(() => localStorage.getItem("token") || "");
 
-  const API_URL = "https://restaurant-app-backend-mihf.onrender.com/api/order";
+  const API_URL = "http://31.97.231.105:4000/api/order";
 
   // ✅ Fetch orders
   const fetchOrders = useCallback(async () => {
