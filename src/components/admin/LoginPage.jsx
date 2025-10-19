@@ -18,17 +18,16 @@ const LoginPage = () => {
     setError("");
 
     try {
-      const response = await fetch("https://api.flamendough.com/api/auth/login", {
+      // ✅ Use local proxy
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
-      // console.log("✅ Login Response:", data);
 
       if (response.ok) {
-        // Save all required data in localStorage
         localStorage.setItem("token", data.token);
         localStorage.setItem("userName", data.name || "Admin");
         localStorage.setItem("userEmail", data.email || email);
@@ -41,7 +40,6 @@ const LoginPage = () => {
         setError(data.message || "Login failed, please try again.");
       }
     } catch (err) {
-      // console.error("❌ Login Error:", err);
       setError("Something went wrong, please try again later.");
     } finally {
       setLoading(false);

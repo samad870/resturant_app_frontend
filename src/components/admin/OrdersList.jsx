@@ -1,5 +1,4 @@
 import { MdModeEdit } from "react-icons/md";
-
 import React, { useEffect, useState } from "react";
 
 const OrdersList = () => {
@@ -11,7 +10,7 @@ const OrdersList = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState(null);
 
-  const API_URL = "https://api.flamendough.com/api/order";
+  const API_URL = "/api/order";
 
   const recalcTotal = (items) =>
     items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -32,9 +31,7 @@ const OrdersList = () => {
 
   const fetchMenuItems = async () => {
     try {
-      const res = await fetch(
-        "https://api.flamendough.com/api/menu"
-      );
+      const res = await fetch("/api/menu");
       if (!res.ok) throw new Error("Failed to fetch menu items");
       const data = await res.json();
       setMenuItems(data);
@@ -87,6 +84,12 @@ const OrdersList = () => {
     fetchMenuItems();
   }, []);
 
+  // 👇 Time formatter (only HH:MM)
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -104,7 +107,7 @@ const OrdersList = () => {
             <table className="min-w-full text-sm text-left">
               <thead className="bg-gray-50 text-gray-600 uppercase tracking-wide text-xs">
                 <tr>
-                  <th className="px-6 py-4">SL.NO</th>
+                  <th className="px-6 py-4">Time</th>
                   <th className="px-6 py-4">Customer</th>
                   <th className="px-6 py-4">Phone</th>
                   <th className="px-6 py-4">Table ID</th>
@@ -138,7 +141,8 @@ const OrdersList = () => {
                 ) : (
                   orders.map((order, index) => (
                     <tr key={order._id} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-4">{index + 1}</td>
+                      {/* ✅ Only Time (HH:MM) */}
+                      <td className="px-6 py-4">{formatTime(order.createdAt)}</td>
                       <td className="px-6 py-4 font-medium text-gray-800">
                         {order.customerName}
                       </td>
@@ -161,8 +165,7 @@ const OrdersList = () => {
                           onClick={() => setSelectedItems(order)}
                           className="px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition font-medium"
                         >
-                          View Items 
-                          {/*  */}
+                          View Items
                         </button>
                       </td>
                       {/* Actions */}
@@ -171,8 +174,7 @@ const OrdersList = () => {
                           onClick={() => setEditingOrder(order)}
                           className="px-3 py-1 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition font-medium"
                         >
-                         <MdModeEdit />
-
+                          <MdModeEdit />
                         </button>
                         <button
                           onClick={() => setShowConfirmDelete(order)}
@@ -209,7 +211,7 @@ const OrdersList = () => {
               Total: ₹{selectedItems.totalAmount}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              Created: {new Date(selectedItems.createdAt).toLocaleString()}
+              Created: {formatTime(selectedItems.createdAt)}
             </p>
             <div className="flex justify-end mt-4">
               <button
@@ -222,9 +224,6 @@ const OrdersList = () => {
           </div>
         </div>
       )}
-
-      {/* Edit Modal (unchanged) */}
-      {/* Delete Confirmation (unchanged) */}
     </div>
   );
 };

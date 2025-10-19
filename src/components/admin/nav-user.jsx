@@ -15,7 +15,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
@@ -24,10 +23,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 export function NavUser({ user }) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -38,13 +39,18 @@ export function NavUser({ user }) {
   };
 
   const handleProfileClick = () => {
-    navigate("/admin/profile");
+    // Close dropdown first
+    setIsOpen(false);
+    // Then navigate after a small delay to ensure dropdown closes
+    setTimeout(() => {
+      navigate("/admin/profile");
+    }, 100);
   };
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
+        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
@@ -92,9 +98,9 @@ export function NavUser({ user }) {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleLogout}
-              className="cursor-pointer "
+              className="cursor-pointer"
             >
-              <LogOut />
+              <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

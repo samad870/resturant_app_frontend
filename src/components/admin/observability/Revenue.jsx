@@ -52,7 +52,7 @@ export default function RevenueWithDatePicker() {
       }
 
       const params = new URLSearchParams({ domain: userDomain })
-      const url = `https://api.flamendough.com/api/analytics/insights?${params.toString()}`
+      const url = `/api/analytics/insights?${params.toString()}`
       const response = await fetch(url, {
         method: "GET",
         headers: {
