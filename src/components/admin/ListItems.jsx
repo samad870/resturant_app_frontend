@@ -12,7 +12,7 @@ const ListItems = () => {
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("category");
 
-  const API_URL = "/api/menu";
+  const API_URL = "https://api.flamendough.com/api/menu";
   const token = localStorage.getItem("token");
 
   // ✅ Fetch Data

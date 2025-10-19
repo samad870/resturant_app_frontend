@@ -16,7 +16,7 @@ const CompletedOrders = () => {
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
   const token = localStorage.getItem("token") || "";
-  const API_URL = "/api/order";
+  const API_URL = "https://api.flamendough.com/api/order";
 
   // ✅ Show Notification (with debounce)
   const showNotification = (message, type = "success") => {
@@ -56,7 +56,7 @@ const CompletedOrders = () => {
     if (!token) return;
 
     try {
-      const res = await fetch("/api/menu", {
+      const res = await fetch("https://api.flamendough.com/api/menu", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch menu items");

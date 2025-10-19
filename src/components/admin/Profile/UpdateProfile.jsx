@@ -34,7 +34,7 @@ const UpdateProfile = () => {
     const fetchDetails = async () => {
       try {
         const res = await fetch(
-          "/api/restaurant/admin",
+          "https://api.flamendough.com/api/restaurant/admin",
           {
             headers: {
               Authorization: `Bearer ${token}`,

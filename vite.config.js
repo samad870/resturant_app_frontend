@@ -4,18 +4,20 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
+  base: "/",
   server: {
     proxy: {
       "/api": {
-        target: "https://api.flamendough.com",
+        target: "https://restaurant-app-backend-mihf.onrender.com",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, "/api"),
+        rewrite: (path) => path.replace(/^\/api/, ""),
       },
+    },
+  },
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
     },
   },
 });
