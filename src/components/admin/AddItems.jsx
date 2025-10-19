@@ -128,7 +128,7 @@ const ProductForm = () => {
       submitData.append("available", formData.available);
       submitData.append("file", file);
 
-      const res = await fetch("/api/menu/", {
+      const res = await fetch("https://api.flamendough.com/api/menu/", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

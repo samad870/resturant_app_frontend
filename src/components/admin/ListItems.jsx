@@ -6,14 +6,29 @@ const ListItems = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, itemId: null, itemName: "" }); // ✅ Added delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // Filters
   const [filterType, setFilterType] = useState("all");
-  const [filterCategory, setFilterCategory] = useState("category");
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
-  const API_URL = "/api/menu";
+  // Notification state
+  const [notification, setNotification] = useState({ show: false, message: "", type: "" });
+
+  const API_URL = "https://api.flamendough.com/api/menu";
   const token = localStorage.getItem("token");
+
+  // Common food background image with orange theme
+  const commonCategoryImage = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80";
+
+  // Show notification function
+  const showNotification = (message, type = "success") => {
+    setNotification({ show: true, message, type });
+  };
+
+  const closeNotification = () => {
+    setNotification({ show: false, message: "", type: "" });
+  };
 
   // ✅ Fetch Data
   useEffect(() => {
@@ -31,8 +46,6 @@ const ListItems = () => {
       });
 
       const data = await res.json();
-      // console.log("API response:", data);
-
       if (Array.isArray(data.menu)) {
         setItems(data.menu);
       } else {
@@ -45,39 +58,40 @@ const ListItems = () => {
     }
   };
 
-  // ✅ Delete Confirmation Functions
-  const confirmDelete = (id, name) => {
-    setDeleteConfirm({ show: true, itemId: id, itemName: name });
+  // ✅ Delete with confirmation
+  const handleDelete = async (id, name) => {
+    setDeleteConfirm({ id, name });
   };
 
-  const cancelDelete = () => {
-    setDeleteConfirm({ show: false, itemId: null, itemName: "" });
-  };
-
-  // ✅ Delete
-  const handleDelete = async (id) => {
+  const confirmDelete = async () => {
     try {
-      const res = await fetch(`${API_URL}/${id}`, {
+      const res = await fetch(`${API_URL}/${deleteConfirm.id}`, {
         method: "DELETE",
         headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
-      if (!res.ok) throw new Error("Failed to delete");
-      setItems(items.filter((item) => item._id !== id));
-      setDeleteConfirm({ show: false, itemId: null, itemName: "" });
+      
+      if (!res.ok) throw new Error("Failed to delete item");
+      
+      setItems(items.filter((item) => item._id !== deleteConfirm.id));
+      showNotification("Item deleted successfully!", "success");
+      setDeleteConfirm(null);
     } catch (err) {
-      alert(err.message);
+      showNotification(err.message, "error");
+      setDeleteConfirm(null);
     }
   };
 
-  // ✅ Update function fixed
+  const cancelDelete = () => {
+    setDeleteConfirm(null);
+  };
+
+  // ✅ Update
   const handleUpdate = async (e) => {
     e.preventDefault();
-
     try {
       let body;
       let headers = { Authorization: token ? `Bearer ${token}` : "" };
 
-      // ✅ If image is a File — send FormData
       if (editingItem.image instanceof File) {
         body = new FormData();
         body.append("name", editingItem.name);
@@ -86,7 +100,7 @@ const ListItems = () => {
         body.append("price", editingItem.price);
         body.append("description", editingItem.description);
         body.append("available", editingItem.available);
-        body.append("file", editingItem.image); // ✅ changed from "image" → "file"
+        body.append("file", editingItem.image);
       } else {
         headers["Content-Type"] = "application/json";
         body = JSON.stringify(editingItem);
@@ -99,40 +113,153 @@ const ListItems = () => {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to update");
+      if (!res.ok) throw new Error(data.message || "Failed to update item");
 
-      // ✅ Fix: the backend returns { message, item: updatedItem }
       const updatedItem = data.item || data;
-
-      // ✅ Update local list
       setItems((prev) =>
         prev.map((i) => (i._id === updatedItem._id ? updatedItem : i))
       );
 
-      // ✅ Close modal and reset
       setEditingItem(null);
-      alert("✅ Item updated successfully!");
+      showNotification("Item updated successfully!", "success");
     } catch (err) {
-      alert("❌ " + err.message);
+      showNotification(err.message, "error");
     }
   };
 
-  // ✅ Categories for filter
-  const categories = ["category", ...new Set(items.map((i) => i.category))];
+  // ✅ Get unique categories with counts
+  const getCategoriesWithCounts = () => {
+    const categoryCounts = {};
+    items.forEach(item => {
+      categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
+    });
+
+    const allCategories = [];
+
+    Object.keys(categoryCounts).forEach(category => {
+      allCategories.push({
+        name: category,
+        count: categoryCounts[category]
+      });
+    });
+
+    return allCategories;
+  };
+
+  const categories = getCategoriesWithCounts();
 
   // ✅ Apply filters
   const filteredItems = items.filter((item) => {
     const typeMatch = filterType === "all" || item.type === filterType;
-    const categoryMatch =
-      filterCategory === "category" || item.category === filterCategory;
+    const categoryMatch = selectedCategory === null || item.category === selectedCategory;
     return typeMatch && categoryMatch;
   });
 
+  // ✅ Handle category click
+  const handleCategoryClick = (categoryName) => {
+    if (selectedCategory === categoryName) {
+      setSelectedCategory(null);
+    } else {
+      setSelectedCategory(categoryName);
+    }
+  };
+
+  // ✅ Handle type filter click
+  const handleTypeClick = (type) => {
+    if (filterType === type) {
+      setFilterType("all");
+    } else {
+      setFilterType(type);
+    }
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSelectedCategory(null);
+    setFilterType("all");
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-4">
-      {/* ✅ Delete Confirmation Modal */}
+    <div className="min-h-screen bg-gray-100 py-10 px-4 relative">
+      {/* Big Modal Notification */}
       <AnimatePresence>
-        {deleteConfirm.show && (
+        {notification.show && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={closeNotification}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ 
+                  type: "spring", 
+                  damping: 25, 
+                  stiffness: 300,
+                  duration: 0.3
+                }}
+                className={`relative rounded-3xl shadow-2xl p-8 w-full max-w-sm mx-auto ${
+                  notification.type === "success" 
+                    ? "bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200" 
+                    : "bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200"
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="text-center">
+                  <div className={`w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-6 ${
+                    notification.type === "success" 
+                      ? "bg-green-100 text-green-600 border-2 border-green-200" 
+                      : "bg-red-100 text-red-600 border-2 border-red-200"
+                  }`}>
+                    {notification.type === "success" ? (
+                      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
+                  </div>
+
+                  <h3 className={`text-3xl font-bold mb-4 ${
+                    notification.type === "success" ? "text-green-900" : "text-red-900"
+                  }`}>
+                    {notification.type === "success" ? "Success!" : "Oops!"}
+                  </h3>
+
+                  <p className={`text-xl mb-8 leading-relaxed ${
+                    notification.type === "success" ? "text-green-700" : "text-red-700"
+                  }`}>
+                    {notification.message}
+                  </p>
+
+                  <motion.button
+                    onClick={closeNotification}
+                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.02 }}
+                    className={`w-full py-5 rounded-2xl text-xl font-bold shadow-lg transition-all ${
+                      notification.type === "success" 
+                        ? "bg-green-500 text-white hover:bg-green-600 shadow-green-200" 
+                        : "bg-red-500 text-white hover:bg-red-600 shadow-red-200"
+                    }`}
+                  >
+                    Done
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirm && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
@@ -169,10 +296,13 @@ const ListItems = () => {
                   {/* Warning Message */}
                   <div className="bg-red-100 border-2 border-red-200 rounded-2xl p-4 mb-6">
                     <p className="text-red-800 font-semibold text-lg">
-                      Delete "{deleteConfirm.itemName}"?
+                      Are you sure you want to delete?
                     </p>
-                    <p className="text-red-700 mt-2">
-                      This action cannot be undone. The menu item will be permanently removed.
+                    <p className="text-red-700 mt-2 font-medium">
+                      "{deleteConfirm.name}"
+                    </p>
+                    <p className="text-red-600 text-sm mt-2">
+                      This action cannot be undone.
                     </p>
                   </div>
 
@@ -188,7 +318,7 @@ const ListItems = () => {
                     </motion.button>
                     
                     <motion.button
-                      onClick={() => handleDelete(deleteConfirm.itemId)}
+                      onClick={confirmDelete}
                       whileTap={{ scale: 0.95 }}
                       whileHover={{ scale: 1.02 }}
                       className="flex-1 py-4 bg-red-500 text-white rounded-2xl font-bold shadow-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
@@ -209,37 +339,98 @@ const ListItems = () => {
         <div className="mb-6 text-center">
           <h2 className="text-3xl font-bold text-gray-800">🍔 Our Menu</h2>
           <p className="text-gray-500">
-            Showing <b>{filteredItems.length}</b> delicious items
+            {selectedCategory ? (
+              <span>Showing items in <b>{selectedCategory}</b> category</span>
+            ) : filterType !== "all" ? (
+              <span>Showing <b>{filterType === "veg" ? "Vegetarian" : "Non-Vegetarian"}</b> items</span>
+            ) : (
+              <span>Select a category to view items</span>
+            )}
           </p>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap justify-center gap-4 mb-8">
-          {/* Veg / Non-Veg */}
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="border border-orange-500 text-gray-700 px-2 py-2 rounded-lg shadow-sm 
-                       focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer"
-          >
-            <option value="all">Type</option>
-            <option value="veg">Veg</option>
-            <option value="non-veg">Non-Veg</option>
-          </select>
-
-          {/* Category */}
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="border border-orange-500 text-gray-700 px-2 py-2 rounded-lg shadow-sm 
-                       focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer"
-          >
-            {categories.map((cat, idx) => (
-              <option key={idx} value={cat}>
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
-              </option>
+        {/* Category Section - New Design with Common Background */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4 text-center">
+            Categories
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {categories.map((category, idx) => (
+              <motion.div
+                key={idx}
+                onClick={() => handleCategoryClick(category.name)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`cursor-pointer rounded-2xl shadow-lg transition-all duration-300 overflow-hidden ${
+                  selectedCategory === category.name 
+                    ? "ring-4 ring-orange-500 shadow-2xl transform scale-105" 
+                    : "hover:shadow-xl"
+                }`}
+              >
+                <div 
+                  className="h-28 flex flex-col items-center justify-center p-4 text-white relative"
+                  style={{
+                    backgroundImage: `url(${commonCategoryImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }}
+                >
+                  {/* Orange overlay with blur effect */}
+                  <div className="absolute inset-0 backdrop-blur-[9px]"></div>
+                  
+                  {/* Content */}
+                  <div className="relative z-10 text-center">
+                    <div className="text-3xl mb-2 drop-shadow-lg">
+                      {category.name.toLowerCase() === "pizza" && "🍽️"}
+                      {category.name.toLowerCase() === "burger" && "🍽️"}
+                      {category.name.toLowerCase() === "pasta" && "🍽️"}
+                      {category.name.toLowerCase() === "desserts" && "🍽️"}
+                      {category.name.toLowerCase() === "beverages" && "🍽️"}
+                      {!["pizza", "burger", "pasta", "desserts", "beverages"].includes(category.name.toLowerCase()) && "🍽️"}
+                    </div>
+                    <h4 className="font-bold text-lg text-center drop-shadow-lg">{category.name}</h4>
+                    <p className="text-white/90 text-sm mt-1 drop-shadow-md">{category.count} items</p>
+                  </div>
+                </div>
+              </motion.div>
             ))}
-          </select>
+          </div>
+        </div>
+
+        {/* Type Filter Buttons */}
+        <div className="flex flex-wrap justify-center gap-4 mb-8">
+          <button
+            onClick={() => setFilterType("all")}
+            className={`px-6 py-2 rounded-lg font-medium transition-all duration-300 ${
+              filterType === "all"
+                ? "bg-orange-600 text-white shadow-lg"
+                : "bg-white text-orange-600 border border-orange-600 hover:bg-orange-50"
+            }`}
+          >
+            All
+          </button>
+          
+          <button
+            onClick={() => handleTypeClick("veg")}
+            className={`px-6 py-2 rounded-lg font-medium transition-all duration-300 ${
+              filterType === "veg"
+                ? "bg-green-600 text-white shadow-lg"
+                : "bg-white text-green-600 border border-green-600 hover:bg-green-50"
+            }`}
+          >
+            🥗 Veg
+          </button>
+          
+          <button
+            onClick={() => handleTypeClick("non-veg")}
+            className={`px-6 py-2 rounded-lg font-medium transition-all duration-300 ${
+              filterType === "non-veg"
+                ? "bg-red-600 text-white shadow-lg"
+                : "bg-white text-red-600 border border-red-600 hover:bg-red-50"
+            }`}
+          >
+            🍗 Non-Veg
+          </button>
         </div>
 
         {/* Loader & Error */}
@@ -252,7 +443,7 @@ const ListItems = () => {
             {filteredItems.map((item) => (
               <div
                 key={item._id}
-                className="bg-white rounded-2xl shadow-md hover:shadow-xl transition duration-300 flex flex-col"
+                className="bg-white rounded-2xl shadow-md hover:shadow-xl transition duration-300 flex flex-col relative"
               >
                 {/* Product Image */}
                 <img
@@ -260,6 +451,20 @@ const ListItems = () => {
                   alt={item.name}
                   className="w-full h-48 object-cover rounded-t-2xl"
                 />
+
+                {/* Type Badge */}
+                <div className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-bold text-white ${
+                  item.type === "veg" ? "bg-green-600" : "bg-red-600"
+                }`}>
+                  {item.type === "veg" ? "🥗 Veg" : "🍗 Non-Veg"}
+                </div>
+
+                {/* Availability Badge - Moved to top right */}
+                <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold text-white ${
+                  item.available ? "bg-green-600" : "bg-red-600"
+                }`}>
+                  {item.available ? "Available" : "Unavailable"}
+                </div>
 
                 {/* Card Content */}
                 <div className="p-4 flex flex-col flex-grow">
@@ -269,7 +474,6 @@ const ListItems = () => {
                   <p className="text-sm text-gray-500">
                     Category: {item.category}
                   </p>
-                  <p className="text-sm text-gray-500">Type: {item.type}</p>
 
                   {/* Description */}
                   <p className="mt-2 text-gray-600 text-sm line-clamp-2">
@@ -281,17 +485,6 @@ const ListItems = () => {
                     ₹{item.price}
                   </p>
 
-                  {/* Availability */}
-                  <label className="flex items-center gap-2 mt-2">
-                    <input
-                      type="checkbox"
-                      checked={item.available}
-                      readOnly
-                      className="w-4 h-4 accent-green-600"
-                    />
-                    <span className="text-sm text-gray-600">Available</span>
-                  </label>
-
                   {/* Action Buttons */}
                   <div className="mt-auto flex gap-2 pt-3">
                     <button
@@ -301,9 +494,8 @@ const ListItems = () => {
                     >
                       Edit
                     </button>
-                    {/* ✅ Updated Delete Button - No more window.confirm */}
                     <button
-                      onClick={() => confirmDelete(item._id, item.name)}
+                      onClick={() => handleDelete(item._id, item.name)}
                       className="flex-1 border border-gray-300 text-red-600 py-2 rounded-lg 
                                  hover:bg-red-50 transition shadow-sm"
                     >

@@ -135,7 +135,7 @@ const RestaurantForm = () => {
         },
       };
 
-      const res = await fetch("/api/restaurant/details", {
+      const res = await fetch("https://api.flamendough.com/api/restaurant/details", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

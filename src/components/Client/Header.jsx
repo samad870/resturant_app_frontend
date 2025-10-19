@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Utensils } from "lucide-react";
+import { X, Utensils, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useSelector, useDispatch } from "react-redux";
@@ -18,7 +18,16 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import Copywright from "@/components/Client/Copywright";
-import { useRestaurant } from "../../hooks/useRestaurant"; // separate hook
+import { useRestaurant } from "../../hooks/useRestaurant";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Header({ logo, siteName = "Default Name" }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -27,15 +36,13 @@ export default function Header({ logo, siteName = "Default Name" }) {
   const { toast } = useToast();
   const { data: restaurantData } = useRestaurant();
 
-  // form inputs
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [tableId, setTableId] = useState("");
 
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.items);
-  const [orderType, setOrderType] = useState(""); // "Take Away" or "Eat Here"
-  // console.log("123456", orderType);
+  const [orderType, setOrderType] = useState("");
 
   const cartCount = Object.values(cartItems).reduce(
     (acc, item) => acc + item.quantity,
@@ -46,10 +53,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
     (acc, item) => acc + item.price * item.quantity,
     0
   );
-  const restaurant = restaurantData || {};
-  // console.log("🍽️ Restaurant Data:", restaurantData.restaurant.tableNumbers);
 
-  // Store multiple active orders
   const [activeOrders, setActiveOrders] = useState([]);
   const expiryTimersRef = useRef({});
   const ONE_HOUR_MS = 60 * 60 * 1000;
@@ -71,7 +75,6 @@ export default function Header({ logo, siteName = "Default Name" }) {
     }, Math.max(0, remainingMs));
   };
 
-  // Load orders from sessionStorage
   useEffect(() => {
     const saved = sessionStorage.getItem("activeOrders");
     if (saved) {
@@ -94,14 +97,84 @@ export default function Header({ logo, siteName = "Default Name" }) {
     return () => {
       Object.values(expiryTimersRef.current).forEach(clearTimeout);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // handle order API
+  // Simple and small professional toast
+  const showOrderSuccessToast = () => {
+    const toastContainer = document.createElement('div');
+    toastContainer.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4';
+    toastContainer.style.background = 'rgba(0, 0, 0, 0.4)';
+    toastContainer.style.backdropFilter = 'blur(4px)';
+    
+    const toastContent = document.createElement('div');
+    toastContent.className = 'bg-white rounded-xl shadow-lg p-5 max-w-xs w-full border border-gray-200';
+
+    toastContent.innerHTML = `
+      <div class="text-center">
+        <div class="flex justify-center mb-3">
+          <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+        </div>
+        
+        <h3 class="text-lg font-semibold text-gray-800 mb-1">Order Confirmed</h3>
+        <p class="text-gray-600 text-sm mb-3">Thank you for your order</p>
+        
+        <div class="bg-orange-50 border border-orange-200 rounded-lg p-2 mb-4">
+          <div class="flex items-center justify-center gap-1 text-orange-700">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+            </svg>
+            <span class="text-xs font-medium">Ready in 10-15 minutes</span>
+          </div>
+        </div>
+        
+        <button class="w-full bg-orange-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors">
+          OK
+        </button>
+      </div>
+    `;
+
+    toastContainer.appendChild(toastContent);
+    document.body.appendChild(toastContainer);
+
+    // Simple fade in animation
+    toastContent.style.opacity = '0';
+    toastContent.style.transform = 'scale(0.9)';
+    toastContent.style.transition = 'all 0.2s ease-out';
+    
+    setTimeout(() => {
+      toastContent.style.opacity = '1';
+      toastContent.style.transform = 'scale(1)';
+    }, 10);
+
+    // Handle close
+    const closeToast = () => {
+      toastContent.style.opacity = '0';
+      toastContent.style.transform = 'scale(0.9)';
+      setTimeout(() => {
+        if (document.body.contains(toastContainer)) {
+          document.body.removeChild(toastContainer);
+        }
+      }, 200);
+    };
+
+    // Close on button click or backdrop click
+    toastContent.querySelector('button').onclick = closeToast;
+    toastContainer.onclick = (e) => {
+      if (e.target === toastContainer) closeToast();
+    };
+
+    // Auto close after 4 seconds
+    setTimeout(closeToast, 4000);
+  };
+
+  // Handle Order Submission
   const handleOrderSubmit = async () => {
     try {
       setLoading(true);
-      // const restaurantId = "cafe";
 
       const orderItems = Object.values(cartItems).map((item) => ({
         menuItemId: item._id,
@@ -110,22 +183,18 @@ export default function Header({ logo, siteName = "Default Name" }) {
         price: item.price,
       }));
 
-      const response = await fetch(
-        // `https://restaurant-app-backend-mihf.onrender.com/api/order/${restaurantId}`,
-        "/api/order",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            customerName,
-            customerPhone,
-            tableId,
-            items: orderItems,
-            totalAmount,
-            orderType,
-          }),
-        }
-      );
+      const response = await fetch("https://api.flamendough.com/api/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName,
+          customerPhone,
+          tableId,
+          items: orderItems,
+          totalAmount,
+          orderType,
+        }),
+      });
 
       if (!response.ok) throw new Error("Failed to place order");
 
@@ -140,7 +209,6 @@ export default function Header({ logo, siteName = "Default Name" }) {
         createdAt: Date.now(),
       };
 
-      // Add to sessionStorage + state
       setActiveOrders((prev) => {
         const updated = [...prev, orderData];
         sessionStorage.setItem("activeOrders", JSON.stringify(updated));
@@ -148,10 +216,8 @@ export default function Header({ logo, siteName = "Default Name" }) {
       });
       scheduleExpiry(orderData.id, ONE_HOUR_MS);
 
-      toast({
-        title: "Order Complete, thank you!",
-        description: "Your order will be ready in about 10–15 minutes.",
-      });
+      // Show toast
+      showOrderSuccessToast();
 
       setShowModal(false);
       setIsCartOpen(false);
@@ -171,7 +237,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
     <>
       <Toaster />
 
-      {/* Bottom Order Summary (cart only before placing order) */}
+      {/* Bottom Order Summary */}
       {totalAmount > 0 && (
         <div className="fixed bottom-0 left-0 w-full bg-white rounded-t-lg border-t shadow-2xl">
           <Accordion type="single" collapsible>
@@ -197,22 +263,18 @@ export default function Header({ logo, siteName = "Default Name" }) {
                               >
                                 −
                               </button>
-
                               <span className="px-1">{item.quantity}</span>
-
                               <button
                                 className="px-2 py-1 border rounded hover:bg-gray-100"
                                 onClick={() => dispatch(incrementQuantity(id))}
                               >
                                 +
                               </button>
-
                               <span className="ml-2">
                                 × ₹{item.price.toFixed(2)}
                               </span>
                             </div>
                           </div>
-
                           <p className="font-semibold text-sm">
                             ₹{(item.price * item.quantity).toFixed(2)}
                           </p>
@@ -349,7 +411,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
               placeholder="Phone Number"
               value={customerPhone}
               onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, ""); // Only digits
+                const value = e.target.value.replace(/\D/g, "");
                 if (value.length <= 10) setCustomerPhone(value);
               }}
               className="w-full border rounded-lg p-2 mb-3 border-none outline-none shadow-md"
@@ -358,25 +420,65 @@ export default function Header({ logo, siteName = "Default Name" }) {
               10-digit phone number required
             </p>
 
-            {/* Table Selection */}
-            {/* Table Selection */}
-            <select
-              value={tableId}
-              onChange={(e) => setTableId(e.target.value)}
-              className="w-full border rounded-lg p-2 mb-4 border-none outline-none shadow-md"
-            >
-              <option value="">Select Table</option>
+            {/* Table Selection - PROPER DROPDOWN */}
+            {/* <div className="mb-4">
+              <div className="relative">
+                <select
+                  value={tableId}
+                  onChange={(e) => setTableId(e.target.value)}
+                  className="w-full appearance-none border border-gray-300 rounded-lg p-3 pr-10 outline-none shadow-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                >
+                  <option value="">Select Table</option>
+                  {Array.from(
+                    { length: restaurantData?.restaurant?.tableNumbers || 0 },
+                    (_, index) => (
+                      <option key={index + 1} value={`T${index + 1}`} >
+                        Table {index + 1}
+                      </option>
+                    )
+                  )}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                  <ChevronDown className="h-4 w-4" />
+                </div>
+              </div>
+            </div> */}
+            <Select value={tableId} onValueChange={setTableId}>
+  <SelectTrigger
+    className="w-full border-2 border-orange-300 rounded-xl p-4 
+    text-gray-800 font-medium bg-white 
+    focus:ring-4 focus:ring-orange-200 focus:border-orange-500 
+    hover:border-orange-400 transition-all duration-200 shadow-lg mb-4 "
+  >
+    <SelectValue placeholder="Select Table" className="text-gray-400" />
+  </SelectTrigger>
 
-              {/* Dynamically generate table options */}
-              {Array.from(
-                { length: restaurantData?.restaurant?.tableNumbers || 0 },
-                (_, index) => (
-                  <option key={index + 1} value={`T${index + 1}`}>
-                    Table {index + 1}
-                  </option>
-                )
-              )}
-            </select>
+  <SelectContent className="bg-white border-2 border-orange-300 shadow-xl rounded-xl max-h-60">
+    <SelectGroup>
+      {/* <SelectLabel className="text-orange-600 font-semibold px-4 py-3 border-b border-orange-100">
+        🍽️ Available Tables
+      </SelectLabel> */}
+
+      {Array.from(
+        { length: restaurantData?.restaurant?.tableNumbers || 0 }, 
+        (_, i) => (
+          <SelectItem
+            key={i + 1}
+            value={`T${i + 1}`}
+            className="text-gray-700 font-medium hover:bg-orange-50 hover:text-orange-700 
+            focus:bg-orange-100 focus:text-orange-700 cursor-pointer py-3 px-4 
+            transition-colors duration-150 border-b border-orange-50 last:border-b-0"
+          >
+            <span className="flex items-center gap-2">
+              {/* <span className="text-orange-500">🪑</span> */}
+              Table {i + 1}
+            </span>
+          </SelectItem>
+        )
+      )}
+    </SelectGroup>
+  </SelectContent>
+</Select>
 
             {/* Order Type Selection */}
             <div className="flex justify-start gap-4 mb-4">
@@ -401,6 +503,17 @@ export default function Header({ logo, siteName = "Default Name" }) {
                 }`}
               >
                 Eat Here
+              </button>
+               <button
+                type="button"
+                onClick={() => setOrderType("Delivery")}
+                className={`px-4 py-1 rounded-full border text-sm font-medium transition shadow-md ${
+                  orderType === "Delivery"
+                    ? "bg-primary text-white border-primary"
+                    : "bg-gray-100 text-gray-700 border-gray-300"
+                }`}
+              >
+                Delivery
               </button>
             </div>
 

@@ -13,7 +13,7 @@ const OrdersList = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState(null);
 
-  const API_URL = "/api/order";
+  const API_URL = "https://api.flamendough.com/api/order";
 
   const fetchOrders = async () => {
     try {
@@ -33,7 +33,7 @@ const OrdersList = () => {
 
   const fetchMenuItems = async () => {
     try {
-      const res = await fetch("/api/menu");
+      const res = await fetch("https://api.flamendough.com/api/menu");
       if (!res.ok) throw new Error("Failed to fetch menu items");
       const data = await res.json();
       setMenuItems(data);
