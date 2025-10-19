@@ -12,6 +12,16 @@ const OrdersTable = ({
   setSelectedItems,
   updateOrder,
 }) => {
+  // ✅ 12-hour format time with AM/PM
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true, // 👈 12-hour format with AM/PM
+    });
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       {/* ✅ Desktop / Tablet View (Table) */}
@@ -19,7 +29,7 @@ const OrdersTable = ({
         <table className="min-w-full text-sm text-left">
           <thead className="bg-gray-50 text-gray-600 uppercase tracking-wide text-xs">
             <tr>
-              <th className="px-6 py-4">SL.NO</th>
+              <th className="px-6 py-4">Time</th>
               <th className="px-6 py-4">Order No</th>
               <th className="px-6 py-4">Customer</th>
               <th className="px-6 py-4">Phone</th>
@@ -54,12 +64,15 @@ const OrdersTable = ({
               </tr>
             ) : (
               orders.map((order, index) => (
-                
                 <OrderRow
                   key={order._id}
-                  order={order}
+                  order={{
+                    ...order,
+                    // 👇 formatted 12-hour time
+                    formattedTime: formatTime(order.createdAt),
+                  }}
                   index={index}
-                  orderNum={300 + orders.length - index - 1} // 👈 starts at 300, increments
+                  orderNum={300 + orders.length - index - 1}
                   setEditingOrder={setEditingOrder}
                   setShowConfirmDelete={setShowConfirmDelete}
                   setSelectedItems={setSelectedItems}
@@ -90,7 +103,9 @@ const OrdersTable = ({
                   <h3 className="font-bold text-gray-900">
                     Order #{300 + orders.length - index - 1}
                   </h3>
-                  <span className="text-sm text-gray-500">SL: {index + 1}</span>
+                  <span className="text-sm text-gray-500">
+                    {formatTime(order.createdAt)}
+                  </span>
                 </div>
 
                 <p className="text-gray-700">
@@ -108,7 +123,6 @@ const OrdersTable = ({
 
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Status:</span>
-                  {/* ✅ Reuse StatusDropdown */}
                   <div className="flex-1">
                     <select
                       value={order.status}
@@ -140,7 +154,7 @@ const OrdersTable = ({
                     onClick={() => setEditingOrder(order)}
                     className="px-3 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition font-medium"
                   >
-                   <MdModeEdit />
+                    <MdModeEdit />
                   </button>
                   <button
                     onClick={() => setShowConfirmDelete(order)}

@@ -18,10 +18,8 @@ export default function FoodListing({ menu, onQuantityChange }) {
   const groupedMenu = groupByCategory(menu || []);
   const dispatch = useDispatch();
 
-  // Get cart from Redux store
   const cartItems = useSelector((state) => state.cart.items || {});
 
-  // Notify parent of total amount
   useEffect(() => {
     if (onQuantityChange) {
       const total = Object.values(cartItems).reduce(
@@ -33,7 +31,6 @@ export default function FoodListing({ menu, onQuantityChange }) {
   }, [cartItems, onQuantityChange]);
 
   const increment = (item) => {
-    // addToCart will create the item if missing or increment if present
     dispatch(addToCart({ id: item._id, item }));
   };
 
@@ -52,9 +49,20 @@ export default function FoodListing({ menu, onQuantityChange }) {
 
           {groupedMenu[category].map((item) => {
             const quantity = cartItems[item._id]?.quantity || 0;
+            const isUnavailable = !item.available;
+
             return (
-              <div key={item._id} className="py-2">
-                <div className="border rounded-lg flex gap-1 shadow-md">
+              <div
+                key={item._id}
+                className={`py-2 transition-opacity duration-300 ${
+                  isUnavailable ? "opacity-50" : "opacity-100"
+                }`}
+              >
+                <div
+                  className={`border rounded-lg flex gap-1 shadow-md transition-colors ${
+                    isUnavailable ? "bg-gray-100" : "bg-white"
+                  }`}
+                >
                   <div className="h-32 w-40 overflow-hidden">
                     <img
                       className="w-full h-full object-cover object-center rounded-l-lg"

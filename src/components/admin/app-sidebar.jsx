@@ -74,7 +74,7 @@ export function AppSidebar({ ...props }) {
         icon: SquareMenu,
         isActive: true,
         items: [
-          { title: "Sales", url: "#" },
+          { title: "Sales", url: "/admin/sales" },
           { title: "Revenue", url: "/admin/revenue" },
         ],
       },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const RestaurantForm = () => {
   const [formData, setFormData] = useState({
@@ -10,18 +10,17 @@ const RestaurantForm = () => {
   });
 
   const [file, setFile] = useState(null);
+  const [fileError, setFileError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
-  // ✅ Category suggestions saved in localStorage
   const [categorySuggestions, setCategorySuggestions] = useState(() => {
     const saved = localStorage.getItem("restaurantCategories");
     return saved ? JSON.parse(saved) : [];
   });
 
-  // ✅ Token from localStorage
   const [token] = useState(() => localStorage.getItem("token") || "");
 
-  // Sync categories with localStorage
   useEffect(() => {
     localStorage.setItem(
       "restaurantCategories",
@@ -29,13 +28,18 @@ const RestaurantForm = () => {
     );
   }, [categorySuggestions]);
 
-  // Input handler - Prevent text in number fields
+  const showNotification = (message, type = "success") => {
+    setNotification({ show: true, message, type });
+  };
+
+  const closeNotification = () => {
+    setNotification({ show: false, message: "", type: "" });
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // For number fields, only allow numbers
     if (name === "tableNumbers" || name === "phoneNumber") {
-      // Remove any non-digit characters
       const numericValue = value.replace(/\D/g, '');
       setFormData((prev) => ({
         ...prev,
@@ -49,38 +53,70 @@ const RestaurantForm = () => {
     }
   };
 
-  // File handler
+  // ✅ File handler with 300KB size limit
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    
+    setFileError("");
+    setFile(null);
+
+    if (!selectedFile) return;
+
+    // ✅ 300KB file size limit
+    const fileSizeInKB = selectedFile.size / 1024;
+    if (fileSizeInKB > 300) {
+      setFileError(`File size too large: ${fileSizeInKB.toFixed(2)} KB. Maximum allowed: 300KB`);
+      e.target.value = "";
+      return;
+    }
+
+    // ✅ All image types accepted
+    const allowedTypes = [
+      'image/jpeg', 
+      'image/jpg', 
+      'image/png', 
+      'image/gif', 
+      'image/webp',
+      'image/avif'
+    ];
+    
+    if (!allowedTypes.includes(selectedFile.type)) {
+      setFileError("Please select a valid image file (JPEG, JPG, PNG, GIF, WEBP, AVIF)");
+      e.target.value = "";
+      return;
+    }
+
+    setFile(selectedFile);
   };
 
-  // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!file) {
-      alert("Please upload a logo file");
+      showNotification("Please upload a logo file", "error");
+      return;
+    }
+
+    if (fileError) {
+      showNotification(fileError, "error");
       return;
     }
 
     if (!token) {
-      alert("⚠️ No token found. Please login first.");
+      showNotification("No token found. Please login first", "error");
       return;
     }
 
-    // Validate table numbers (max 10 digits)
     if (formData.tableNumbers.length > 10) {
-      alert("Table numbers cannot exceed 10 digits");
+      showNotification("Table numbers cannot exceed 10 digits", "error");
       return;
     }
 
-    // Validate phone number (exactly 10 digits)
     if (formData.phoneNumber.length !== 10) {
-      alert("Phone number must be exactly 10 digits");
+      showNotification("Phone number must be exactly 10 digits", "error");
       return;
     }
 
-    // ✅ Save new category if unique
     const newCategory = formData.category.trim();
     if (newCategory && !categorySuggestions.includes(newCategory)) {
       setCategorySuggestions((prev) => [...prev, newCategory]);
@@ -94,28 +130,25 @@ const RestaurantForm = () => {
         tableNumbers: Number(formData.tableNumbers),
         phoneNumber: Number(formData.phoneNumber),
         logo: {
-          url: URL.createObjectURL(file), // demo only
+          url: URL.createObjectURL(file),
           public_id: formData.publicId || "sample_logo_id",
         },
       };
 
-      const res = await fetch(
-        "https://api.flamendough.com/api/restaurant/details",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await fetch("/api/restaurant/details", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
       const result = await res.json();
       if (!res.ok)
         throw new Error(result.message || "Failed to add restaurant");
 
-      alert("✅ Restaurant details saved successfully.");
+      showNotification("Restaurant details saved successfully!", "success");
 
       setFormData({
         category: "",
@@ -124,14 +157,14 @@ const RestaurantForm = () => {
         publicId: "",
       });
       setFile(null);
+      setFileError("");
     } catch (error) {
-      alert("❌ " + error.message);
+      showNotification(error.message, "error");
     } finally {
       setLoading(false);
     }
   };
 
-  // Prevent paste of non-numeric values in number fields
   const handlePaste = (e) => {
     if (e.target.name === "tableNumbers" || e.target.name === "phoneNumber") {
       const pasteData = e.clipboardData.getData('text');
@@ -142,9 +175,83 @@ const RestaurantForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 relative">
+      <AnimatePresence>
+        {notification.show && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={closeNotification}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ 
+                  type: "spring", 
+                  damping: 25, 
+                  stiffness: 300,
+                  duration: 0.3
+                }}
+                className={`relative rounded-3xl shadow-2xl p-8 w-full max-w-sm mx-auto ${
+                  notification.type === "success" 
+                    ? "bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200" 
+                    : "bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200"
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="text-center">
+                  <div className={`w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-6 ${
+                    notification.type === "success" 
+                      ? "bg-green-100 text-green-600 border-2 border-green-200" 
+                      : "bg-red-100 text-red-600 border-2 border-red-200"
+                  }`}>
+                    {notification.type === "success" ? (
+                      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
+                  </div>
+
+                  <h3 className={`text-3xl font-bold mb-4 ${
+                    notification.type === "success" ? "text-green-900" : "text-red-900"
+                  }`}>
+                    {notification.type === "success" ? "Success!" : "Oops!"}
+                  </h3>
+
+                  <p className={`text-xl mb-8 leading-relaxed ${
+                    notification.type === "success" ? "text-green-700" : "text-red-700"
+                  }`}>
+                    {notification.message}
+                  </p>
+
+                  <motion.button
+                    onClick={closeNotification}
+                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.02 }}
+                    className={`w-full py-5 rounded-2xl text-xl font-bold shadow-lg transition-all ${
+                      notification.type === "success" 
+                        ? "bg-green-500 text-white hover:bg-green-600 shadow-green-200" 
+                        : "bg-red-500 text-white hover:bg-red-600 shadow-red-200"
+                    }`}
+                  >
+                    Done
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-3xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-3">
             Restaurant Profile Setup
@@ -172,7 +279,6 @@ const RestaurantForm = () => {
           </div>
 
           <div className="space-y-6">
-            {/* Row 1: Category + Table Numbers */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -204,21 +310,17 @@ const RestaurantForm = () => {
                 <input
                   type="text"
                   inputMode="numeric"
-                  // pattern="[0-9]*"
                   name="tableNumbers"
                   value={formData.tableNumbers}
                   onChange={handleChange}
                   onPaste={handlePaste}
                   required
-                  // maxLength={10}
                   className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
                   placeholder="e.g. 25"
                 />
-                {/* <p className="text-xs text-gray-500 mt-2">Maximum 10 digits allowed</p> */}
               </div>
             </div>
 
-            {/* Row 2: Phone */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Phone Number
@@ -239,7 +341,7 @@ const RestaurantForm = () => {
               <p className="text-xs text-gray-500 mt-2">Must be exactly 10 digits</p>
             </div>
 
-            {/* File Upload */}
+            {/* ✅ File Upload with 300KB limit */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Restaurant Logo
@@ -250,7 +352,7 @@ const RestaurantForm = () => {
                   onChange={handleFileChange}
                   className="hidden"
                   id="logo-upload"
-                  accept="image/*"
+                  accept=".jpeg,.jpg,.png,.gif,.webp,.avif,image/*"
                 />
                 <label htmlFor="logo-upload" className="cursor-pointer">
                   <div className="flex flex-col items-center justify-center gap-2">
@@ -259,22 +361,29 @@ const RestaurantForm = () => {
                       <p className="text-gray-700 font-medium">
                         {file ? file.name : "Click to upload logo"}
                       </p>
-                      <p className="text-sm text-gray-500">PNG, JPG, JPEG up to 5MB</p>
+                      {/* ✅ Updated to show 300KB limit */}
+                      <p className="text-sm text-gray-500">JPEG, JPG, PNG up to 300KB</p>
                     </div>
                   </div>
                 </label>
               </div>
-              {file && (
+              
+              {file && !fileError && (
                 <p className="text-sm text-green-600 mt-2 flex items-center gap-2">
-                  <span>✅</span> Selected: {file.name}
+                  <span>✅</span> Selected: {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                </p>
+              )}
+              
+              {fileError && (
+                <p className="text-sm text-red-600 mt-2 flex items-center gap-2">
+                  <span>❌</span> {fileError}
                 </p>
               )}
             </div>
 
-            {/* Submit Button */}
             <motion.button
               type="submit"
-              disabled={loading}
+              disabled={loading || fileError}
               whileTap={{ scale: 0.95 }}
               className="w-full bg-orange-500 text-white py-4 rounded-xl text-lg font-semibold shadow-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
