@@ -169,7 +169,7 @@ const UpdateProfile = () => {
       });
 
       // ✅ UPDATED: Using PUT with FormData for restaurant update
-      const res = await fetch("/api/restaurant/", {
+      const res = await fetch("https://api.flamendough.com/api/restaurant/", {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -211,7 +211,7 @@ const UpdateProfile = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        "/api/restaurant/",
+        "https://api.flamendough.com/api/restaurant/",
         {
           method: "DELETE",
           headers: {
