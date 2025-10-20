@@ -24,7 +24,7 @@ export default function Filter({ filters, onChange }) {
     <div className="my-4 flex items-center justify-between gap-2 px-2">
       <div
         // onClick={handleClick}
-        className="bg-primary text-white p-2 w-fit rounded-3xl px-4 flex items-center gap-2 shadow-md cursor-pointer hover:bg-orange-600 transition"
+        className="bg-primary text-white p-2 w-fit rounded-3xl px-4 flex items-center gap-2 shadow-md hover:bg-orange-600 transition"
       >
         Filter
         <SlidersHorizontal size={20} strokeWidth={3} />
