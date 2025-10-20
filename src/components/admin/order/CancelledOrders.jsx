@@ -18,6 +18,7 @@ const CancelledOrders = () => {
   const [token] = useState(() => localStorage.getItem("token") || "");
 
   const API_URL = "/api/order"; // proxy
+  const tableType = "cancelled";
 
   // ✅ Notification functions
   const showNotification = (message, type = "success") => {
@@ -200,6 +201,7 @@ const CancelledOrders = () => {
           setShowConfirmDelete={setShowConfirmDelete}
           setSelectedItems={setSelectedItems}
           updateOrder={updateOrder}
+          tableType = {tableType}
         />
       </div>
 

@@ -17,6 +17,8 @@ const CompletedOrders = () => {
 
   const token = localStorage.getItem("token") || "";
   const API_URL = "/api/order";
+  const tableType = "complete"
+
 
   // ✅ Show Notification (with debounce)
   const showNotification = (message, type = "success") => {
@@ -208,6 +210,7 @@ const CompletedOrders = () => {
           setShowConfirmDelete={setShowConfirmDelete}
           setSelectedItems={setSelectedItems}
           updateOrder={updateOrder}
+          tableType = {tableType}
         />
       </div>
 
