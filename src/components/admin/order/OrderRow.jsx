@@ -10,6 +10,7 @@ const OrderRow = ({
   setShowConfirmDelete,
   setSelectedItems,
   updateOrder,
+  tableType, // 👈 receive from parent
 }) => {
   return (
     <tr key={order._id} className="hover:bg-gray-50 transition">
@@ -43,21 +44,24 @@ const OrderRow = ({
         </button>
       </td>
 
-      <td className="px-6 py-4 text-right space-x-2 flex">
-        <button
-          onClick={() => setEditingOrder(order)}
-          className="px-3 py-1 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition font-medium"
-        >
-          <MdModeEdit size={20} />
-        </button>
+     {/* 👇 Show Actions only if tableType === "pending" */}
+      {tableType === "pending" && (
+        <td className="px-6 py-4 text-right flex space-x-2">
+          <button
+            onClick={() => setEditingOrder(order)}
+            className="px-3 py-1 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition font-medium"
+          >
+            <MdModeEdit size={20} />
+          </button>
 
-        <button
-          onClick={() => setShowConfirmDelete(order)}
-          className="px-3 py-1 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 transition font-medium"
-        >
-          <MdDelete size={20} />
-        </button>
-      </td>
+          <button
+            onClick={() => setShowConfirmDelete(order)}
+            className="px-3 py-1 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 transition font-medium"
+          >
+            <MdDelete size={20} />
+          </button>
+        </td>
+      )}
     </tr>
   );
 };
