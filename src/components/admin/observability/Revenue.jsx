@@ -4,6 +4,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import config from "../../../config"
 
 const chartConfig = {
   revenue: { label: "Revenue", color: "#f97316" },
@@ -52,7 +53,7 @@ export default function RevenueWithDatePicker() {
       }
 
       const params = new URLSearchParams({ domain: userDomain })
-      const url = `https://api.flamendough.com/api/analytics/insights?${params.toString()}`
+      const url = `${config.BASE_URL}/api/analytics/insights?${params.toString()}`
       const response = await fetch(url, {
         method: "GET",
         headers: {

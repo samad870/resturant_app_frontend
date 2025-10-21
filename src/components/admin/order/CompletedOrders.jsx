@@ -4,6 +4,7 @@ import OrdersTable from "./OrdersTable";
 import EditOrderModal from "./EditOrderModal";
 import DeleteModal from "./DeleteModal";
 import ItemsModal from "./ItemsModal";
+import config from "../../../config";
 
 const CompletedOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -16,9 +17,7 @@ const CompletedOrders = () => {
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
   const token = localStorage.getItem("token") || "";
-  const API_URL = "https://api.flamendough.com/api/order";
-  const tableType = "complete"
-
+  const API_URL = `${config.BASE_URL}/api/order`;
 
   // ✅ Show Notification (with debounce)
   const showNotification = (message, type = "success") => {
@@ -58,7 +57,7 @@ const CompletedOrders = () => {
     if (!token) return;
 
     try {
-      const res = await fetch("https://api.flamendough.com/api/menu", {
+      const res = await fetch(`${config.BASE_URL}/api/menu`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch menu items");

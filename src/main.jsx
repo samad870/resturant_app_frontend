@@ -26,10 +26,12 @@ import Adminprofile from "./components/admin/Profile/Adminprofile";
 import Revenue from "./components/admin/observability/Revenue";
 import ComingSoon from "./components/admin/common/ComingSoon";
 import ErrorPage from "./components/admin/common/ErrorPage";
+import AppTitle from "../AppTitle";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
     <BrowserRouter>
+     <AppTitle />
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />

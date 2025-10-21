@@ -1,5 +1,6 @@
 import { MdModeEdit } from "react-icons/md";
 import React, { useEffect, useState } from "react";
+import config from "../../config";
 
 const OrdersList = () => {
   const [orders, setOrders] = useState([]);
@@ -10,7 +11,7 @@ const OrdersList = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState(null);
 
-  const API_URL = "https://api.flamendough.com/api/order";
+  const API_URL = `${config.BASE_URL}/api/order`;
 
   const recalcTotal = (items) =>
     items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -31,7 +32,7 @@ const OrdersList = () => {
 
   const fetchMenuItems = async () => {
     try {
-      const res = await fetch("https://api.flamendough.com/api/menu");
+      const res = await fetch(`${config.BASE_URL}/api/menu`);
       if (!res.ok) throw new Error("Failed to fetch menu items");
       const data = await res.json();
       setMenuItems(data);

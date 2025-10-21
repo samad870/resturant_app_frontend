@@ -4,6 +4,7 @@ import OrdersTable from "./OrdersTable";
 import EditOrderModal from "./EditOrderModal";
 import DeleteModal from "./DeleteModal";
 import ItemsModal from "./ItemsModal";
+import config from "../../../config";
 
 const CancelledOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -17,8 +18,7 @@ const CancelledOrders = () => {
 
   const [token] = useState(() => localStorage.getItem("token") || "");
 
-  const API_URL = "https://api.flamendough.com/api/order"; // proxy
-  const tableType = "cancelled";
+  const API_URL = `${config.BASE_URL}/api/order`; // proxy
 
   // ✅ Notification functions
   const showNotification = (message, type = "success") => {
@@ -46,7 +46,7 @@ const CancelledOrders = () => {
   const fetchMenuItems = useCallback(async () => {
     if (!token) return; // token check
     try {
-      const res = await fetch("https://api.flamendough.com/api/menu", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${config.BASE_URL}/api/menu`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error("Failed to fetch menu items");
       const data = await res.json();
       setMenuItems(Array.isArray(data) ? data : data.menu || data.data || []);

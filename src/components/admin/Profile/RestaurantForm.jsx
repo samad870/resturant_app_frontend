@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import config from "../../../config";
 
 const RestaurantForm = () => {
   const [formData, setFormData] = useState({
@@ -135,7 +136,7 @@ const RestaurantForm = () => {
         },
       };
 
-      const res = await fetch("https://api.flamendough.com/api/restaurant/details", {
+      const res = await fetch(`${config.BASE_URL}/api/restaurant/details`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

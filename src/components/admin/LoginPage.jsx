@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { VITE_API_BASE_URL } from "../../../env.config";
+// import baseURL from "../../config";
+import config from "../../config";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -19,7 +22,10 @@ const LoginPage = () => {
 
     try {
       // ✅ Use local proxy
-      const response = await fetch("https://api.flamendough.com/api/auth/login", {
+      // const baseURL = ; // proxy
+      // `${config.BASE_URL}/api/products`
+      const response = await fetch(`${config.BASE_URL}/api/auth/login`,
+         {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+// import config from "@/config";
+import config from "../../config";
+
 
 const ListItems = () => {
   const [items, setItems] = useState([]);
@@ -15,8 +18,7 @@ const ListItems = () => {
   // Notification state
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
-  // const API_URL = "https://api.flamendough.com/api/menu";
-  const API_URL = "https://api.flamendough.com/api/menu";
+  const API_URL = `${config.BASE_URL}/api/menu`;
   const token = localStorage.getItem("token");
 
   // Common food background image with orange theme
