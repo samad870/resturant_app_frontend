@@ -18,6 +18,7 @@ const CompletedOrders = () => {
 
   const token = localStorage.getItem("token") || "";
   const API_URL = `${config.BASE_URL}/api/order`;
+  const tableType = "complete"
 
   // ✅ Show Notification (with debounce)
   const showNotification = (message, type = "success") => {
