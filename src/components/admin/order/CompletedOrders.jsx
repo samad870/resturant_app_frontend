@@ -17,6 +17,8 @@ const CompletedOrders = () => {
 
   const token = localStorage.getItem("token") || "";
   const API_URL = "/api/order";
+
+  
   const tableType = "complete"
 
 

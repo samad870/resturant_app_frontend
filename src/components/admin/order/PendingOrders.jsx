@@ -22,6 +22,8 @@ const PendingOrders = () => {
 
   const token = localStorage.getItem("token") || "";
   const API_URL = "/api/order";
+
+  
   const tableType = "pending"
 
   // ✅ Show Notification with auto-close
