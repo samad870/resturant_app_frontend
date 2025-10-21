@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-
+import config from "../../config";
 const ProductForm = () => {
   const [formData, setFormData] = useState({
     name: "",
@@ -128,7 +128,7 @@ const ProductForm = () => {
       submitData.append("available", formData.available);
       submitData.append("file", file);
 
-      const res = await fetch("https://api.flamendough.com/api/menu/", {
+      const res = await fetch(`${config.BASE_URL}/api/menu/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

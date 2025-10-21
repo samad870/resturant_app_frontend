@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Utensils, ChevronDown } from "lucide-react";
+import { X, Utensils } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useSelector, useDispatch } from "react-redux";
@@ -19,15 +19,8 @@ import {
 } from "@/components/ui/accordion";
 import Copywright from "@/components/Client/Copywright";
 import { useRestaurant } from "../../hooks/useRestaurant";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import config from "../../config";
+import OrderFormModal from "./OrderFormModal";
 
 export default function Header({ logo, siteName = "Default Name" }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -39,10 +32,12 @@ export default function Header({ logo, siteName = "Default Name" }) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [tableId, setTableId] = useState("");
+  const [orderType, setOrderType] = useState("");
+  const [address, setAddress] = useState("");
+  const [useCurrentLocation, setUseCurrentLocation] = useState(false);
 
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.cart.items);
-  const [orderType, setOrderType] = useState("");
 
   const cartCount = Object.values(cartItems).reduce(
     (acc, item) => acc + item.quantity,
@@ -99,81 +94,160 @@ export default function Header({ logo, siteName = "Default Name" }) {
     };
   }, []);
 
-  // Simple and small professional toast
-  const showOrderSuccessToast = () => {
-    const toastContainer = document.createElement('div');
-    toastContainer.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4';
-    toastContainer.style.background = 'rgba(0, 0, 0, 0.4)';
-    toastContainer.style.backdropFilter = 'blur(4px)';
+  const showSuccessMessage = (orderId) => {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-40 backdrop-blur-sm';
     
-    const toastContent = document.createElement('div');
-    toastContent.className = 'bg-white rounded-xl shadow-lg p-5 max-w-xs w-full border border-gray-200';
-
-    toastContent.innerHTML = `
-      <div class="text-center">
-        <div class="flex justify-center mb-3">
-          <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    messageDiv.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 border border-gray-200 animate-scale-in">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-        </div>
-        
-        <h3 class="text-lg font-semibold text-gray-800 mb-1">Order Confirmed</h3>
-        <p class="text-gray-600 text-sm mb-3">Thank you for your order</p>
-        
-        <div class="bg-orange-50 border border-orange-200 rounded-lg p-2 mb-4">
-          <div class="flex items-center justify-center gap-1 text-orange-700">
-            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-            </svg>
-            <span class="text-xs font-medium">Ready in 10-15 minutes</span>
+          
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Order Confirmed!</h3>
+          <p class="text-gray-600 mb-1">Thank you for your order</p>
+          <p class="text-sm text-gray-500 mb-4">Order ID: ${orderId}</p>
+          
+          <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+            <div class="flex items-center justify-center gap-2 text-orange-700">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+              </svg>
+              <span class="text-sm font-medium">Ready in 10-15 minutes</span>
+            </div>
           </div>
+          
+          <button class="w-full bg-orange-500 text-white py-3 rounded-xl text-base font-medium hover:bg-orange-600 transition-colors duration-200 shadow-md">
+            Got It
+          </button>
         </div>
-        
-        <button class="w-full bg-orange-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors">
-          OK
-        </button>
       </div>
     `;
 
-    toastContainer.appendChild(toastContent);
-    document.body.appendChild(toastContainer);
+    document.body.appendChild(messageDiv);
 
-    // Simple fade in animation
-    toastContent.style.opacity = '0';
-    toastContent.style.transform = 'scale(0.9)';
-    toastContent.style.transition = 'all 0.2s ease-out';
+    // Add scale-in animation
+    const content = messageDiv.querySelector('div > div');
+    content.style.transform = 'scale(0.9)';
+    content.style.opacity = '0';
+    content.style.transition = 'all 0.3s ease-out';
     
     setTimeout(() => {
-      toastContent.style.opacity = '1';
-      toastContent.style.transform = 'scale(1)';
+      content.style.transform = 'scale(1)';
+      content.style.opacity = '1';
     }, 10);
 
-    // Handle close
-    const closeToast = () => {
-      toastContent.style.opacity = '0';
-      toastContent.style.transform = 'scale(0.9)';
+    const closeMessage = () => {
+      content.style.transform = 'scale(0.9)';
+      content.style.opacity = '0';
       setTimeout(() => {
-        if (document.body.contains(toastContainer)) {
-          document.body.removeChild(toastContainer);
+        if (document.body.contains(messageDiv)) {
+          document.body.removeChild(messageDiv);
         }
-      }, 200);
+      }, 300);
     };
 
-    // Close on button click or backdrop click
-    toastContent.querySelector('button').onclick = closeToast;
-    toastContainer.onclick = (e) => {
-      if (e.target === toastContainer) closeToast();
+    messageDiv.querySelector('button').onclick = closeMessage;
+    messageDiv.onclick = (e) => {
+      if (e.target === messageDiv) closeMessage();
     };
 
-    // Auto close after 4 seconds
-    setTimeout(closeToast, 4000);
+    setTimeout(closeMessage, 5000);
   };
 
-  // Handle Order Submission
+  const showErrorMessage = (message) => {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-40 backdrop-blur-sm';
+    
+    messageDiv.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 border border-gray-200 animate-scale-in">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </div>
+          
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Order Failed</h3>
+          <p class="text-gray-600 mb-4">${message}</p>
+          
+          <button class="w-full bg-gray-500 text-white py-3 rounded-xl text-base font-medium hover:bg-gray-600 transition-colors duration-200 shadow-md">
+            Try Again
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(messageDiv);
+
+    // Add scale-in animation
+    const content = messageDiv.querySelector('div > div');
+    content.style.transform = 'scale(0.9)';
+    content.style.opacity = '0';
+    content.style.transition = 'all 0.3s ease-out';
+    
+    setTimeout(() => {
+      content.style.transform = 'scale(1)';
+      content.style.opacity = '1';
+    }, 10);
+
+    const closeMessage = () => {
+      content.style.transform = 'scale(0.9)';
+      content.style.opacity = '0';
+      setTimeout(() => {
+        if (document.body.contains(messageDiv)) {
+          document.body.removeChild(messageDiv);
+        }
+      }, 300);
+    };
+
+    messageDiv.querySelector('button').onclick = closeMessage;
+    messageDiv.onclick = (e) => {
+      if (e.target === messageDiv) closeMessage();
+    };
+
+    setTimeout(closeMessage, 5000);
+  };
+
+  const isFormValid = () => {
+    // Basic validations for all order types
+    if (!customerName || customerName.trim().length === 0) {
+      return false;
+    }
+    if (!customerPhone || customerPhone.length !== 10) {
+      return false;
+    }
+
+    // Order type specific validations
+    switch (orderType) {
+      case "Eat Here":
+        return !!tableId;
+      case "Take Away":
+        return true; // No additional fields needed for Take Away
+      case "Delivery":
+        return !!address && address.trim().length > 0;
+      default:
+        return false;
+    }
+  };
+
   const handleOrderSubmit = async () => {
     try {
+      // Final validation check
+      if (!isFormValid()) {
+        let errorMessage = "Please fill all required fields correctly.";
+        if (!customerName) errorMessage = "Please enter your name.";
+        else if (!customerPhone || customerPhone.length !== 10) errorMessage = "Please enter a valid 10-digit phone number.";
+        else if (orderType === "Eat Here" && !tableId) errorMessage = "Please select a table.";
+        else if (orderType === "Delivery" && !address) errorMessage = "Please enter delivery address.";
+        
+        showErrorMessage(errorMessage);
+        return;
+      }
+
       setLoading(true);
 
       const orderItems = Object.values(cartItems).map((item) => ({
@@ -183,54 +257,76 @@ export default function Header({ logo, siteName = "Default Name" }) {
         price: item.price,
       }));
 
-      const response = await fetch("https://api.flamendough.com/api/order", {
+      const orderData = {
+        customerName: customerName.trim(),
+        customerPhone,
+        items: orderItems,
+        totalAmount,
+        orderType,
+      };
+
+      // Add conditional fields
+      if (orderType === "Eat Here") {
+        orderData.tableId = tableId;
+      }
+      if (orderType === "Delivery") {
+        orderData.address = address.trim();
+      }
+
+      const response = await fetch(`${config.BASE_URL}/api/order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerName,
-          customerPhone,
-          tableId,
-          items: orderItems,
-          totalAmount,
-          orderType,
-        }),
+        body: JSON.stringify(orderData),
       });
 
       if (!response.ok) throw new Error("Failed to place order");
 
       const data = await response.json();
-      const orderData = {
-        id: data?.orderId || Date.now(),
-        customerName,
-        customerPhone,
-        tableId,
-        items: orderItems,
-        totalAmount,
+      const completeOrderData = {
+        id: data?.orderId || `ORD${Date.now()}`,
+        ...orderData,
         createdAt: Date.now(),
       };
 
       setActiveOrders((prev) => {
-        const updated = [...prev, orderData];
+        const updated = [...prev, completeOrderData];
         sessionStorage.setItem("activeOrders", JSON.stringify(updated));
         return updated;
       });
-      scheduleExpiry(orderData.id, ONE_HOUR_MS);
+      scheduleExpiry(completeOrderData.id, ONE_HOUR_MS);
 
-      // Show toast
-      showOrderSuccessToast();
+      showSuccessMessage(completeOrderData.id);
 
+      // Reset form
       setShowModal(false);
       setIsCartOpen(false);
+      setOrderType("");
+      setAddress("");
+      setUseCurrentLocation(false);
+      setCustomerName("");
+      setCustomerPhone("");
+      setTableId("");
 
+      // Clear cart after delay
       setTimeout(() => {
         dispatch(clearCart());
       }, 300);
     } catch (error) {
       console.error("Error placing order:", error);
-      alert("❌ Failed to place order. Try again.");
+      showErrorMessage("Failed to place order. Please try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setShowModal(false);
+    setOrderType("");
+    setAddress("");
+    setUseCurrentLocation(false);
+    setCustomerName("");
+    setCustomerPhone("");
+    setTableId("");
   };
 
   return (
@@ -346,9 +442,13 @@ export default function Header({ logo, siteName = "Default Name" }) {
               >
                 <div className="mb-2 text-sm">
                   <p className="font-medium">
-                    {order.customerName} — Table {order.tableId}
+                    {order.customerName} - {order.orderType}
+                    {order.tableId && ` - Table ${order.tableId}`}
                   </p>
                   <p className="text-gray-500">Phone: {order.customerPhone}</p>
+                  {order.address && (
+                    <p className="text-gray-500">Address: {order.address}</p>
+                  )}
                 </div>
 
                 <ul className="space-y-2">
@@ -379,170 +479,45 @@ export default function Header({ logo, siteName = "Default Name" }) {
         <Copywright />
       </div>
 
-      {/* Modal for Customer Details */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-md">
-            <div className="flex items-center gap-1">
-              {logo && (
-                <img src={logo} alt="Logo" className="h-12 w-auto mb-3" />
-              )}
-              <h2 className="text-lg font-semibold mb-4">Enter Your Details</h2>
-            </div>
+      {/* Order Form Modal */}
+      <OrderFormModal
+        showModal={showModal}
+        setShowModal={setShowModal}
+        customerName={customerName}
+        setCustomerName={setCustomerName}
+        customerPhone={customerPhone}
+        setCustomerPhone={setCustomerPhone}
+        tableId={tableId}
+        setTableId={setTableId}
+        orderType={orderType}
+        setOrderType={setOrderType}
+        address={address}
+        setAddress={setAddress}
+        useCurrentLocation={useCurrentLocation}
+        setUseCurrentLocation={setUseCurrentLocation}
+        loading={loading}
+        handleOrderSubmit={handleOrderSubmit}
+        restaurantData={restaurantData}
+        logo={logo}
+        resetForm={resetForm}
+      />
 
-            {/* Customer Name */}
-            <input
-              type="text"
-              placeholder="Your Name"
-              value={customerName}
-              onChange={(e) => {
-                if (e.target.value.length <= 15)
-                  setCustomerName(e.target.value);
-              }}
-              className="w-full border rounded-lg p-2 mb-3 border-none outline-none shadow-md"
-            />
-            <p className="text-xs text-gray-500 mb-2">
-              Max 15 characters ({15 - customerName.length} left)
-            </p>
-
-            {/* Phone Number */}
-            <input
-              type="tel"
-              placeholder="Phone Number"
-              value={customerPhone}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "");
-                if (value.length <= 10) setCustomerPhone(value);
-              }}
-              className="w-full border rounded-lg p-2 mb-3 border-none outline-none shadow-md"
-            />
-            <p className="text-xs text-gray-500 mb-2">
-              10-digit phone number required
-            </p>
-
-            {/* Table Selection - PROPER DROPDOWN */}
-            {/* <div className="mb-4">
-              <div className="relative">
-                <select
-                  value={tableId}
-                  onChange={(e) => setTableId(e.target.value)}
-                  className="w-full appearance-none border border-gray-300 rounded-lg p-3 pr-10 outline-none shadow-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
-                >
-                  <option value="">Select Table</option>
-                  {Array.from(
-                    { length: restaurantData?.restaurant?.tableNumbers || 0 },
-                    (_, index) => (
-                      <option key={index + 1} value={`T${index + 1}`} >
-                        Table {index + 1}
-                      </option>
-                    )
-                  )}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                  <ChevronDown className="h-4 w-4" />
-                </div>
-              </div>
-            </div> */}
-            <Select value={tableId} onValueChange={setTableId}>
-  <SelectTrigger
-    className="w-full border-2 border-orange-300 rounded-xl p-4 
-    text-gray-800 font-medium bg-white 
-    focus:ring-4 focus:ring-orange-200 focus:border-orange-500 
-    hover:border-orange-400 transition-all duration-200 shadow-lg mb-4 "
-  >
-    <SelectValue placeholder="Select Table" className="text-gray-400" />
-  </SelectTrigger>
-
-  <SelectContent className="bg-white border-2 border-orange-300 shadow-xl rounded-xl max-h-60">
-    <SelectGroup>
-      {/* <SelectLabel className="text-orange-600 font-semibold px-4 py-3 border-b border-orange-100">
-        🍽️ Available Tables
-      </SelectLabel> */}
-
-      {Array.from(
-        { length: restaurantData?.restaurant?.tableNumbers || 0 }, 
-        (_, i) => (
-          <SelectItem
-            key={i + 1}
-            value={`T${i + 1}`}
-            className="text-gray-700 font-medium hover:bg-orange-50 hover:text-orange-700 
-            focus:bg-orange-100 focus:text-orange-700 cursor-pointer py-3 px-4 
-            transition-colors duration-150 border-b border-orange-50 last:border-b-0"
-          >
-            <span className="flex items-center gap-2">
-              {/* <span className="text-orange-500">🪑</span> */}
-              Table {i + 1}
-            </span>
-          </SelectItem>
-        )
-      )}
-    </SelectGroup>
-  </SelectContent>
-</Select>
-
-            {/* Order Type Selection */}
-            <div className="flex justify-start gap-4 mb-4">
-              <button
-                type="button"
-                onClick={() => setOrderType("Take Away")}
-                className={`px-4 py-1 rounded-full border text-sm font-medium transition shadow-md ${
-                  orderType === "Take Away"
-                    ? "bg-primary text-white border-primary"
-                    : "bg-gray-100 text-gray-700 border-gray-300"
-                }`}
-              >
-                Take Away
-              </button>
-              <button
-                type="button"
-                onClick={() => setOrderType("Eat Here")}
-                className={`px-4 py-1 rounded-full border text-sm font-medium transition shadow-md ${
-                  orderType === "Eat Here"
-                    ? "bg-primary text-white border-primary"
-                    : "bg-gray-100 text-gray-700 border-gray-300"
-                }`}
-              >
-                Eat Here
-              </button>
-               <button
-                type="button"
-                onClick={() => setOrderType("Delivery")}
-                className={`px-4 py-1 rounded-full border text-sm font-medium transition shadow-md ${
-                  orderType === "Delivery"
-                    ? "bg-primary text-white border-primary"
-                    : "bg-gray-100 text-gray-700 border-gray-300"
-                }`}
-              >
-                Delivery
-              </button>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowModal(false)}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="bg-primary text-white"
-                onClick={handleOrderSubmit}
-                disabled={
-                  !customerName ||
-                  !customerPhone ||
-                  customerPhone.length !== 10 ||
-                  !tableId ||
-                  !orderType ||
-                  loading
-                }
-              >
-                {loading ? "Submitting..." : "Submit"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Add CSS for animation */}
+      <style jsx>{`
+        @keyframes scale-in {
+          from {
+            transform: scale(0.9);
+            opacity: 0;
+          }
+          to {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        .animate-scale-in {
+          animation: scale-in 0.3s ease-out;
+        }
+      `}</style>
     </>
   );
 }

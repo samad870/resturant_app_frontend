@@ -3,6 +3,7 @@ import OrdersTable from "./OrdersTable";
 import EditOrderModal from "./EditOrderModal";
 import DeleteModal from "./DeleteModal";
 import ItemsModal from "./ItemsModal";
+import config from "../../../config";
 
 const OrdersList = () => {
   const [orders, setOrders] = useState([]);
@@ -13,7 +14,7 @@ const OrdersList = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState(null);
 
-  const API_URL = "https://api.flamendough.com/api/order";
+  const API_URL = `${config.BASE_URL}/api/order`;
 
   const fetchOrders = async () => {
     try {
@@ -33,7 +34,7 @@ const OrdersList = () => {
 
   const fetchMenuItems = async () => {
     try {
-      const res = await fetch("https://api.flamendough.com/api/menu");
+      const res = await fetch(`${config.BASE_URL}/api/menu`);
       if (!res.ok) throw new Error("Failed to fetch menu items");
       const data = await res.json();
       setMenuItems(data);
