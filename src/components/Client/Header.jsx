@@ -111,8 +111,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
       }));
 
       const response = await fetch(
-        // `https://restaurant-app-backend-mihf.onrender.com/api/order/${restaurantId}`,
-        "/api/order",
+        "https://api.flamendough.com/api/order",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
