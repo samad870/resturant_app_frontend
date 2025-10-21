@@ -1,7 +1,7 @@
 export const getMenu = async () => {
   try {
     const response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/menu/public` // no param added
+      `${import.meta.env.VITE_API_BASE_URL}/api/menu/public` // no param added
     );
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
