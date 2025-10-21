@@ -15,6 +15,11 @@ const PendingOrders = () => {
   const [selectedItems, setSelectedItems] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
+   const [lastUpdated, setLastUpdated] = useState(null);
+  // ✅ Persisted Auto Refresh Settings
+  const [autoRefresh, setAutoRefresh] = useState(localStorage.getItem("autoRefresh") || "OFF");
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState(null);
+
 
   const token = localStorage.getItem("token") || "";
   const API_URL = `${config.BASE_URL}/api/order`;
@@ -38,6 +43,7 @@ const PendingOrders = () => {
       const data = await res.json();
       if (!Array.isArray(data)) throw new Error("Invalid data format from API");
       setOrders(data.reverse());
+      setLastUpdated(new Date()); // 👈 store last update time
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -99,6 +105,32 @@ const PendingOrders = () => {
     }
   };
 
+   // ✅ Manual Refresh
+  const handleManualRefresh = async () => {
+    await fetchOrders();
+  };
+
+  // ✅ Start Auto Refresh
+  const startAutoRefresh = (minutes) => {
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+
+    const id = setInterval(() => {
+      console.log("🔁 Auto-refresh triggered");
+      fetchOrders();
+    }, minutes * 60 * 1000);
+
+    setAutoRefreshInterval(id);
+    localStorage.setItem("autoRefresh", `${minutes} min`);
+  };
+
+  // ✅ Stop Auto Refresh
+  const stopAutoRefresh = () => {
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    setAutoRefresh("OFF");
+    setAutoRefreshInterval(null);
+    localStorage.setItem("autoRefresh", "OFF");
+  };
+
   // ✅ Initial Fetch
   useEffect(() => {
     if (!token) {
@@ -109,6 +141,21 @@ const PendingOrders = () => {
     fetchOrders();
     fetchMenuItems();
   }, [token, fetchOrders, fetchMenuItems]);
+
+   // ✅ Load and Restore Saved Auto Refresh from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("autoRefresh");
+    if (saved && saved !== "OFF") {
+      const mins = parseInt(saved);
+      if (!isNaN(mins)) {
+        setAutoRefresh(saved);
+        startAutoRefresh(mins);
+      }
+    }
+    return () => {
+      if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    };
+  }, []);
 
   const pendingOrders = orders.filter((o) => o.status === "pending");
 
@@ -177,10 +224,55 @@ const PendingOrders = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Table Section */}
+     {/* Table Section */}
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold text-gray-900 mb-6 flex justify-center">⏳ Pending Orders</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-3xl font-bold text-gray-900">⏳ Pending Orders</h2>
+
+          {/* ✅ Top Right Buttons */}
+          <div className="flex items-center gap-3">
+            {/* Refresh Button */}
+            <button
+              onClick={handleManualRefresh}
+              className="px-3 py-2 bg-orange-500  text-white font-normal rounded-xl hover:bg-orange-600 transition flex items-center gap-2">
+              Refresh
+            </button>
+
+            {/* Auto Refresh Dropdown */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="autoRefresh"
+               className="text-sm text-gray-600 font-medium">
+                Auto Refresh:
+              </label>
+              <select
+                id="autoRefresh"
+                value={autoRefresh}
+                 onChange={(e) => {
+                  const value = e.target.value;
+                  setAutoRefresh(value);
+                  if (value === "OFF") stopAutoRefresh();
+                  else {
+                    const mins = parseInt(value);
+                    if (!isNaN(mins)) startAutoRefresh(mins);
+                  }
+                }}
+                className="px-3 py-2 border rounded-lg text-sm font-medium bg-white hover:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                 <option value="OFF">Off</option>
+                <option value="1 min">Every 1 min</option>
+                <option value="2 min">Every 2 min</option>
+                <option value="5 min">Every 5 min</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* ✅ Last updated text */}
+        {lastUpdated && (
+          <p className="text-right text-xs text-gray-500 mb-2">
+            Last updated: {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </p>
+        )}
 
         <OrdersTable
           orders={pendingOrders}
@@ -190,6 +282,7 @@ const PendingOrders = () => {
           setShowConfirmDelete={setShowConfirmDelete}
           setSelectedItems={setSelectedItems}
           updateOrder={updateOrder}
+          tableType={tableType}
         />
       </div>
 

@@ -11,6 +11,7 @@ const OrdersTable = ({
   setShowConfirmDelete,
   setSelectedItems,
   updateOrder,
+  tableType
 }) => {
   // ✅ 12-hour format time with AM/PM
   const formatTime = (dateString) => {
@@ -37,7 +38,10 @@ const OrdersTable = ({
               <th className="px-6 py-4">Order Type</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4">Items</th>
-              <th className="px-6 py-4 text-right">Actions</th>
+              {/* 👇 Only show Actions column if tableType is "pending" */}
+              {tableType === "pending" && (
+                <th className="px-6 py-4 text-right">Actions</th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -77,6 +81,7 @@ const OrdersTable = ({
                   setShowConfirmDelete={setShowConfirmDelete}
                   setSelectedItems={setSelectedItems}
                   updateOrder={updateOrder}
+                  tableType={tableType}
                 />
               ))
             )}

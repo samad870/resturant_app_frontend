@@ -201,6 +201,7 @@ const CancelledOrders = () => {
           setShowConfirmDelete={setShowConfirmDelete}
           setSelectedItems={setSelectedItems}
           updateOrder={updateOrder}
+          tableType = {tableType}
         />
       </div>
 
