@@ -21,6 +21,7 @@ const CancelledOrders = () => {
   const API_URL = `${config.BASE_URL}/api/order`; // proxy
   const tableType = "cancelled";
 
+
   // ✅ Notification functions
   const showNotification = (message, type = "success") => {
     setNotification({ show: true, message, type });
