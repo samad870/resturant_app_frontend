@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Utensils } from "lucide-react";
+import { X } from "lucide-react";
+import { FiShoppingCart } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useSelector, useDispatch } from "react-redux";
@@ -99,7 +100,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
     messageDiv.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-40 backdrop-blur-sm';
     
     messageDiv.innerHTML = `
-      <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 border border-gray-200 animate-scale-in">
+      <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 border border-gray-200" style="animation: scale-in 0.3s ease-out;">
         <div class="text-center">
           <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,7 +164,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
     messageDiv.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-40 backdrop-blur-sm';
     
     messageDiv.innerHTML = `
-      <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 border border-gray-200 animate-scale-in">
+      <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 border border-gray-200" style="animation: scale-in 0.3s ease-out;">
         <div class="text-center">
           <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -401,7 +402,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
         </Link>
 
         <button onClick={() => setIsCartOpen(true)} className="relative">
-          <Utensils className="w-6 h-6 text-gray-700 hover:text-black" />
+          <FiShoppingCart className="w-6 h-6 text-gray-700 hover:text-black" />
           {activeOrders.length > 0 && (
             <span className="absolute -top-2 -right-2 bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
               {activeOrders.length}
@@ -501,23 +502,6 @@ export default function Header({ logo, siteName = "Default Name" }) {
         logo={logo}
         resetForm={resetForm}
       />
-
-      {/* Add CSS for animation */}
-      <style jsx>{`
-        @keyframes scale-in {
-          from {
-            transform: scale(0.9);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-        .animate-scale-in {
-          animation: scale-in 0.3s ease-out;
-        }
-      `}</style>
     </>
   );
 }

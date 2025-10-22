@@ -5,6 +5,7 @@ import EditOrderModal from "./EditOrderModal";
 import DeleteModal from "./DeleteModal";
 import ItemsModal from "./ItemsModal";
 import config from "../../../config";
+import { SlRefresh } from "react-icons/sl";
 
 const PendingOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -226,30 +227,33 @@ const PendingOrders = () => {
           </motion.div>
         )}
       </AnimatePresence>
-     {/* Table Section */}
+     
+      {/* Table Section */}
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-3xl font-bold text-gray-900">⏳ Pending Orders</h2>
+        {/* Single line layout for mobile */}
+        <div className="flex flex-row items-center justify-between mb-6 gap-3">
+          <h2 className="text-xl sm:text-3xl font-bold text-gray-900 whitespace-nowrap">⏳ Pending</h2>
 
-          {/* ✅ Top Right Buttons */}
-          <div className="flex items-center gap-3">
+          {/* ✅ Top Right Buttons - Single line on mobile */}
+          <div className="flex items-center gap-2">
             {/* Refresh Button */}
             <button
               onClick={handleManualRefresh}
-              className="px-3 py-2 bg-orange-500  text-white font-normal rounded-xl hover:bg-orange-600 transition flex items-center gap-2">
-              Refresh
+              className="p-2 sm:px-3 sm:py-2 bg-orange-500 text-white font-normal rounded-xl hover:bg-orange-600 transition flex items-center gap-1 sm:gap-2"
+            >
+              <SlRefresh className="text-sm sm:text-base" />
+              <span className="hidden xs:inline text-xs sm:text-sm">Refresh</span>
             </button>
 
-            {/* Auto Refresh Dropdown */}
-            <div className="flex items-center gap-2">
-              <label htmlFor="autoRefresh"
-               className="text-sm text-gray-600 font-medium">
+            {/* Auto Refresh Dropdown - Compact on mobile */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              <label htmlFor="autoRefresh" className="hidden sm:inline text-sm text-gray-600 font-medium whitespace-nowrap">
                 Auto Refresh:
               </label>
               <select
                 id="autoRefresh"
                 value={autoRefresh}
-                 onChange={(e) => {
+                onChange={(e) => {
                   const value = e.target.value;
                   setAutoRefresh(value);
                   if (value === "OFF") stopAutoRefresh();
@@ -258,12 +262,12 @@ const PendingOrders = () => {
                     if (!isNaN(mins)) startAutoRefresh(mins);
                   }
                 }}
-                className="px-3 py-2 border rounded-lg text-sm font-medium bg-white hover:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="px-2 py-1 sm:px-3 sm:py-2 border rounded-lg text-xs sm:text-sm font-medium bg-white hover:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-20 sm:min-w-32"
               >
-                 <option value="OFF">Off</option>
-                <option value="1 min">Every 1 min</option>
-                <option value="2 min">Every 2 min</option>
-                <option value="5 min">Every 5 min</option>
+                <option value="OFF">Off</option>
+                <option value="1 min">1 min</option>
+                <option value="2 min">2 min</option>
+                <option value="5 min">5 min</option>
               </select>
             </div>
           </div>
