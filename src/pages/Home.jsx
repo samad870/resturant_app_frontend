@@ -90,7 +90,7 @@ export default function Home() {
 
   return (
     <>
-      <div className="sticky top-0 bg-white z-20">
+      <div className="sticky top-0 bg-white z-20 border-b shadow-sm ">
         <Header
           logo={restaurantData.restaurant?.logo?.url}
           siteName={restaurantData.restaurant?.restaurantName}
