@@ -32,7 +32,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "embla-carousel-react": "^8.6.0",
-    "framer-motion": "^12.23.12",
+    "framer-motion": "^12.23.24",
     "lucide-react": "^0.528.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

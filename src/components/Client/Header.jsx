@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { X, Clock, MapPin, Phone } from "lucide-react";
 import { FiShoppingCart } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -130,7 +130,6 @@ export default function Header({ logo, siteName = "Default Name" }) {
 
     document.body.appendChild(messageDiv);
 
-    // Add scale-in animation
     const content = messageDiv.querySelector('div > div');
     content.style.transform = 'scale(0.9)';
     content.style.opacity = '0';
@@ -171,7 +170,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
             </svg>
           </div>
-          
+
           <h3 class="text-xl font-bold text-gray-800 mb-2">Order Failed</h3>
           <p class="text-gray-600 mb-4">${message}</p>
           
@@ -184,7 +183,6 @@ export default function Header({ logo, siteName = "Default Name" }) {
 
     document.body.appendChild(messageDiv);
 
-    // Add scale-in animation
     const content = messageDiv.querySelector('div > div');
     content.style.transform = 'scale(0.9)';
     content.style.opacity = '0';
@@ -214,7 +212,6 @@ export default function Header({ logo, siteName = "Default Name" }) {
   };
 
   const isFormValid = () => {
-    // Basic validations for all order types
     if (!customerName || customerName.trim().length === 0) {
       return false;
     }
@@ -222,12 +219,11 @@ export default function Header({ logo, siteName = "Default Name" }) {
       return false;
     }
 
-    // Order type specific validations
     switch (orderType) {
       case "Eat Here":
         return !!tableId;
       case "Take Away":
-        return true; // No additional fields needed for Take Away
+        return true;
       case "Delivery":
         return !!address && address.trim().length > 0;
       default:
@@ -237,7 +233,6 @@ export default function Header({ logo, siteName = "Default Name" }) {
 
   const handleOrderSubmit = async () => {
     try {
-      // Final validation check
       if (!isFormValid()) {
         let errorMessage = "Please fill all required fields correctly.";
         if (!customerName) errorMessage = "Please enter your name.";
@@ -266,7 +261,6 @@ export default function Header({ logo, siteName = "Default Name" }) {
         orderType,
       };
 
-      // Add conditional fields
       if (orderType === "Eat Here") {
         orderData.tableId = tableId;
       }
@@ -298,7 +292,6 @@ export default function Header({ logo, siteName = "Default Name" }) {
 
       showSuccessMessage(completeOrderData.id);
 
-      // Reset form
       setShowModal(false);
       setIsCartOpen(false);
       setOrderType("");
@@ -308,7 +301,6 @@ export default function Header({ logo, siteName = "Default Name" }) {
       setCustomerPhone("");
       setTableId("");
 
-      // Clear cart after delay
       setTimeout(() => {
         dispatch(clearCart());
       }, 300);
@@ -336,7 +328,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
 
       {/* Bottom Order Summary */}
       {totalAmount > 0 && (
-        <div className="fixed bottom-0 left-0 w-full bg-white rounded-t-lg border-t shadow-2xl">
+        <div className="fixed bottom-0 left-0 w-full bg-white rounded-t-lg border-t shadow-2xl ">
           <Accordion type="single" collapsible>
             <AccordionItem value="item-1">
               <AccordionTrigger>View Your Order</AccordionTrigger>
@@ -393,7 +385,7 @@ export default function Header({ logo, siteName = "Default Name" }) {
       )}
 
       {/* Header */}
-      <header className="flex items-center justify-between p-3">
+      <header className="flex items-center justify-between p-3 ">
         <Link to="/" className="flex items-center space-x-2">
           {logo && <img src={logo} alt="Logo" className="h-12 w-auto" />}
           <span className="text-primary font-mostrate text-2xl">
@@ -411,74 +403,128 @@ export default function Header({ logo, siteName = "Default Name" }) {
         </button>
       </header>
 
-      {/* Sidebar overlay */}
+      {/* Sidebar overlay with backdrop blur */}
       {isCartOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 z-40"
+          className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm z-40"
           onClick={() => setIsCartOpen(false)}
         ></div>
       )}
 
-      {/* Sidebar with multiple orders */}
+      {/* Sidebar with multiple orders - IMPROVED DESIGN */}
       <div
-        className={`fixed top-0 right-0 h-full w-[70%] bg-white shadow-lg z-50 transform transition-transform duration-300 ${
-          isCartOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-lg font-semibold">Your Orders</h2>
-          <button onClick={() => setIsCartOpen(false)}>
-            <X className="w-6 h-6 text-gray-600 hover:text-black" />
-          </button>
+  className={`fixed top-0 right-0 h-full w-[85%] max-w-sm bg-white shadow-xl z-50 transform transition-transform duration-300 ease-out ${
+    isCartOpen ? "translate-x-0" : "translate-x-full"
+  }`}
+>
+  {/* Header */}
+  <div className="flex justify-between items-center p-4 border-b bg-orange-50">
+    <h2 className="text-lg font-semibold text-gray-800">Your Orders</h2>
+    <button 
+      onClick={() => setIsCartOpen(false)}
+      className="p-1 hover:bg-gray-100 rounded transition-colors"
+    >
+      <X className="w-5 h-5 text-gray-600" />
+    </button>
+  </div>
+
+  {/* Orders List */}
+  <div className="flex-1 overflow-y-auto h-[calc(100%-140px)]">
+    <div className="p-4 space-y-4">
+      {activeOrders.length === 0 ? (
+        <div className="text-center py-8">
+          <FiShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500">No active orders yet</p>
         </div>
-
-        <div className="p-4 space-y-6 overflow-y-auto">
-          {activeOrders.length === 0 ? (
-            <p className="text-gray-500">No active orders yet.</p>
-          ) : (
-            activeOrders.map((order) => (
-              <div
-                key={order.id}
-                className="border rounded-lg p-3 shadow-sm bg-primary bg-opacity-10"
-              >
-                <div className="mb-2 text-sm">
-                  <p className="font-medium">
-                    {order.customerName} - {order.orderType}
-                    {order.tableId && ` - Table ${order.tableId}`}
-                  </p>
-                  <p className="text-gray-500">Phone: {order.customerPhone}</p>
-                  {order.address && (
-                    <p className="text-gray-500">Address: {order.address}</p>
-                  )}
+      ) : (
+        activeOrders.map((order) => (
+          <div
+            key={order.id}
+            className="border border-orange-200 rounded-lg p-3 bg-white shadow-sm"
+          >
+            {/* Order Header with Labels */}
+            <div className="flex justify-between items-start mb-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium text-gray-500">Name:</span>
+                  <p className="font-medium text-gray-800">{order.customerName}</p>
                 </div>
-
-                <ul className="space-y-2">
-                  {order.items.map((item) => (
-                    <li
-                      key={item.menuItemId}
-                      className="flex justify-between text-sm"
-                    >
-                      <span>
-                        {item.name} ({item.quantity} × ₹{item.price.toFixed(2)})
-                      </span>
-                      <span className="font-medium">
-                        ₹{(item.price * item.quantity).toFixed(2)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="border-t mt-2 pt-2 flex justify-between text-sm font-semibold">
-                  <span>Total:</span>
-                  <span>₹{order.totalAmount.toFixed(2)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500 mt-3">Phone:</span>
+                  <p className="text-sm text-gray-600 mt-3">{order.customerPhone}</p>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+              <div className="text-right">
+                <div className="flex items-center gap-1 justify-end mb-1">
+                  <span className="text-xs font-medium text-gray-500">Type:</span>
+                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                    order.orderType === "Delivery" 
+                      ? "bg-blue-100 text-blue-700"
+                      : order.orderType === "Take Away"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-orange-100 text-orange-700"
+                  }`}>
+                    {order.orderType}
+                  </span>
+                </div>
+                {order.tableId && (
+                  <div className="flex items-center gap-1 justify-end">
+                    <span className="text-xs font-medium text-gray-500 mt-3">Table:</span>
+                    <p className="text-xs text-gray-600 font-medium mt-3">{order.tableId}</p>
+                  </div>
+                )}
+              </div>
+            </div>
 
-        <Copywright />
-      </div>
+            {/* Delivery Address (if any) */}
+            {order.address && (
+              <div className="mb-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium text-gray-500">Address:</span>
+                </div>
+                <p className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                  {order.address}
+                </p>
+              </div>
+            )}
+
+            {/* Order Items with Label */}
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-medium text-gray-500">Items:</span>
+              </div>
+              <div className="space-y-2">
+                {order.items.map((item, index) => (
+                  <div key={index} className="flex justify-between text-sm">
+                    <span className="text-gray-700">
+                      {item.name} × {item.quantity}
+                    </span>
+                    <span className="font-medium text-gray-800">
+                      ₹{(item.price * item.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Order Total with Label */}
+            <div className="border-t pt-2 flex justify-between items-center">
+              <span className="font-semibold text-gray-800">Total Amount:</span>
+              <span className="text-lg font-bold text-primary">
+                ₹{order.totalAmount.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  </div>
+
+  {/* Footer - Fixed at bottom */}
+  <div className=" bg-white">
+    <Copywright />
+  </div>
+</div>
 
       {/* Order Form Modal */}
       <OrderFormModal

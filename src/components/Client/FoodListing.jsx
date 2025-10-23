@@ -39,12 +39,12 @@ export default function FoodListing({ menu, onQuantityChange }) {
   };
 
   return (
-    <div className="my-4 flex flex-col pb-20 px-2">
+    <div className="bg-white flex flex-col pb-20 px-2">
       {Object.keys(groupedMenu).map((category) => (
         <div key={category} id={`category-${category}`} className="mb-6">
-          <div className="flex items-center gap-2 font-normal mb-2">
+          <div className="flex items-center gap-2 font-normal mb-2 ">
             <Dot className="text-primary" size={12} strokeWidth={24} />
-            <span className="text-lg font-bold">{category}</span>
+            <span className="text-lg font-bold ">{category}</span>
           </div>
 
           {groupedMenu[category].map((item) => {
@@ -54,7 +54,7 @@ export default function FoodListing({ menu, onQuantityChange }) {
             return (
               <div
                 key={item._id}
-                className={`py-2 transition-opacity duration-300 ${
+                className={`py-2 transition-opacity duration-300  ${
                   isUnavailable ? "opacity-50" : "opacity-100"
                 }`}
               >

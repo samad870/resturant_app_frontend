@@ -117,28 +117,33 @@ export default function OrderFormModal({
         {/* Header */}
         <div className="sticky top-0 bg-white rounded-t-2xl border-b p-6 pb-4">
           <div className="flex items-center justify-between">
-            <div className="flex justify-between items-center gap-16">
-                 {!orderType && (
-              <Link 
-                to="/"
-                onClick={() => setShowModal(false)}
-                className="flex items-center gap-2 text-primary font-medium hover:underline transition-colors duration-200"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Home
-              </Link>
-            )}
-              {logo && (
-                <img src={logo} alt="Logo" className="h-10 w-10 rounded-lg" />
+            <div className="flex justify-between items-center gap-4">
+              {/* Home Button - Only show when no order type is selected */}
+              {!orderType && (
+                <Link 
+                  to="/"
+                  onClick={() => setShowModal(false)}
+                  className="flex items-center gap-2 text-primary font-medium hover:underline transition-colors duration-200"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Home
+                </Link>
               )}
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">Place Your Order</h2>
-                <p className="text-sm text-gray-600">Enter your details to continue</p>
-              </div>
+              
+              {/* Back Button - Only show when order type is selected */}
+              {orderType && (
+                <button
+                  onClick={() => {
+                    setOrderType("");
+                    setSelectedOrderType("");
+                  }}
+                  className="flex items-center gap-2 text-primary font-medium hover:underline transition-colors duration-200"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Order Types
+                </button>
+              )}
             </div>
-            
-            {/* Home Button - Only show when no order type is selected */}
-           
           </div>
         </div>
 
@@ -175,20 +180,6 @@ export default function OrderFormModal({
             </div>
           ) : (
             <>
-              {/* Back Button */}
-              <button
-                onClick={() => {
-                  setOrderType("");
-                  setSelectedOrderType("");
-                }}
-                className="flex items-center gap-2 text-primary font-medium mb-6 hover:underline"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Back to Order Types
-              </button>
-
               {/* Customer Name */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -286,29 +277,6 @@ export default function OrderFormModal({
                         className="flex-1 border border-gray-300 rounded-xl p-4 outline-none shadow-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 bg-white"
                       />
                     </div>
-                    
-                    {/* <button
-                      type="button"
-                      onClick={handleUseCurrentLocation}
-                      disabled={useCurrentLocation}
-                      className={`w-full flex items-center justify-center gap-3 p-4 border-2 rounded-xl transition-all duration-200 ${
-                        useCurrentLocation
-                          ? "bg-green-50 text-green-700 border-green-300"
-                          : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:border-blue-300 hover:scale-[1.02]"
-                      }`}
-                    >
-                      {useCurrentLocation ? (
-                        <>
-                          <MapPin className="w-5 h-5" />
-                          <span className="font-medium">Using Current Location</span>
-                        </>
-                      ) : (
-                        <>
-                          <Navigation className="w-5 h-5" />
-                          <span className="font-medium">Use My Current Location</span>
-                        </>
-                      )}
-                    </button> */}
                   </div>
                 )}
               </div>

@@ -11,7 +11,7 @@ export default function SearchItem({ search, onSearch }) {
         onChange={(e) => onSearch(e.target.value)}
         className="bg-white rounded-2xl px-4 py-6 text-[16px] font-light pl-12 outline-none border-none shadow-md"
       />
-      <Search className="absolute left-3 top-2 w-fit h-8 text-gray-300 z-10" />
+      <Search className="absolute left-5 top-3 w-fit h-6 text-gray-300 z-10" />
     </div>
   );
 }
