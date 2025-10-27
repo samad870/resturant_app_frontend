@@ -104,7 +104,7 @@ export default function Home() {
           activeCategory={activeCategory}
         />
       </div>
-      <FoodListing menu={filteredMenu} onQuantityChange={setTotal} />
+      <FoodListing className="relative z-50" menu={filteredMenu} onQuantityChange={setTotal} />
       <Copywright />
     </>
   );

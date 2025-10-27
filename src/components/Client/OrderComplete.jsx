@@ -2,21 +2,21 @@ import { Button } from "@/components/ui/button";
 import { IndianRupee } from "lucide-react";
 
 export default function OrderComplete({
-  amount,
+  // amount,
   buttonText,
   onClick,
   disabled,
 }) {
   return (
     <div>
-      <div className="w-full p-2 shadow-lg">
+      <div className="w-full p-2">
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1 text-base">
+          {/* <span className="flex items-center gap-1 text-base">
             <IndianRupee />
             {amount.toLocaleString("en-IN")}
-          </span>
+          </span> */}
           <Button
-            className="bg-primary text-white"
+            className="bg-primary text-white runded-full"
             onClick={onClick}
             disabled={disabled}
           >
