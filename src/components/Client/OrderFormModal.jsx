@@ -115,7 +115,7 @@ export default function OrderFormModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white rounded-t-2xl border-b p-6 pb-4">
+        <div className="sticky top-0 bg-white rounded-t-2xl border-b px-4 p-3">
           <div className="flex items-center justify-between">
             <div className="flex justify-between items-center gap-4">
               {/* Home Button - Only show when no order type is selected */}
@@ -147,11 +147,11 @@ export default function OrderFormModal({
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4">
           {/* Order Type Selection - Vertical Layout */}
           {!orderType ? (
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Choose Order Type</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Choose Order Type</h3>
               {orderTypeOptions.map((option) => (
                 <button
                   key={option.value}
