@@ -24,7 +24,6 @@ const OrdersList = () => {
 
       // ✅ Just reverse orders, no order number logic
       setOrders(data.reverse());
-      
     } catch (err) {
       setError(err.message);
     } finally {
@@ -74,7 +73,8 @@ const OrdersList = () => {
     fetchMenuItems();
 
     const interval = setInterval(fetchOrders, 2000);
-    return () => clearInterval(interval); 
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -91,15 +91,18 @@ const OrdersList = () => {
           orders={orders}
           loading={loading}
           error={error}
+          updateOrder={updateOrder}
           setEditingOrder={setEditingOrder}
           setShowConfirmDelete={setShowConfirmDelete}
           setSelectedItems={setSelectedItems}
-          updateOrder={updateOrder}
         />
       </div>
 
       {selectedItems && (
-        <ItemsModal order={selectedItems} onClose={() => setSelectedItems(null)} />
+        <ItemsModal
+          order={selectedItems}
+          onClose={() => setSelectedItems(null)}
+        />
       )}
 
       {editingOrder && (

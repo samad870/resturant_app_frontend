@@ -1,4 +1,4 @@
-import Listitem from "@/components/admin/ListItems";
+import Listitem from "@/components/admin/Menu/Menu";
 
 export default function Admin() {
   return (

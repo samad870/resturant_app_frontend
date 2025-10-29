@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import OrdersTable from "./OrdersTable";
 import EditOrderModal from "./EditOrderModal";
@@ -14,35 +15,44 @@ const CompletedOrders = () => {
   const [showConfirmDelete, setShowConfirmDelete] = useState(null);
   const [selectedItems, setSelectedItems] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
-  const [notification, setNotification] = useState({ show: false, message: "", type: "" });
+  const [notification, setNotification] = useState({
+    show: false,
+    message: "",
+    type: "",
+  });
+
+
+  // ✅ 1. Add state for restaurant details
+  const [restaurantDetails, setRestaurantDetails] = useState(null);
 
   const token = localStorage.getItem("token") || "";
   const API_URL = `${config.BASE_URL}/api/order`;
-  const tableType = "complete"
+  const tableType = "complete";
 
-  // ✅ Show Notification (with debounce)
   const showNotification = (message, type = "success") => {
     setNotification({ show: true, message, type });
-    setTimeout(() => setNotification({ show: false, message: "", type: "" }), 2000);
+    setTimeout(
+      () => setNotification({ show: false, message: "", type: "" }),
+      2000
+    );
   };
 
-  const closeNotification = () => setNotification({ show: false, message: "", type: "" });
+  const closeNotification = () =>
+    setNotification({ show: false, message: "", type: "" });
 
-  // ✅ Fetch Orders
-  const fetchOrders = async () => {
-    if (!token) return showNotification("No token found. Please login first", "error");
+  // ✅ Wrapped in useCallback for useEffect
+  const fetchOrders = useCallback(async () => {
+    if (!token)
+      return showNotification("No token found. Please login first", "error");
 
     try {
       setLoading(true);
       const res = await fetch(API_URL, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
-
       if (!Array.isArray(data)) throw new Error("Invalid data format from API");
-
       setOrders(data.reverse());
     } catch (err) {
       console.error(err);
@@ -51,25 +61,19 @@ const CompletedOrders = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, API_URL]); // Added dependencies
 
-  // ✅ Fetch Menu Items (Stable)
   const fetchMenuItems = useCallback(async () => {
+    // ... (your existing fetchMenuItems code is fine) ...
     if (!token) return;
-
     try {
       const res = await fetch(`${config.BASE_URL}/api/menu`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch menu items");
-
       const data = await res.json();
-      const items = Array.isArray(data)
-        ? data
-        : data.menu || data.data || [];
-
+      const items = Array.isArray(data) ? data : data.menu || data.data || [];
       if (!Array.isArray(items)) throw new Error("Invalid menu data");
-
       setMenuItems(items);
     } catch (err) {
       console.error(err);
@@ -78,8 +82,32 @@ const CompletedOrders = () => {
     }
   }, [token]);
 
-  // ✅ Update Order
+  // ✅ 2. Add function to fetch restaurant details
+  const fetchRestaurantDetails = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${config.BASE_URL}/api/restaurant/admin`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+      if (!res.ok) throw new Error("Failed to fetch restaurant details");
+      const data = await res.json();
+      if (data.restaurant) {
+        setRestaurantDetails(data.restaurant);
+      } else {
+        throw new Error("Restaurant data not found in response");
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification("Could not load restaurant details for bills", "error");
+    }
+  }, [token]);
+
   const updateOrder = async (orderId, updatedData) => {
+    // ... (your existing updateOrder code is fine) ...
     try {
       const res = await fetch(`${API_URL}/${orderId}`, {
         method: "PUT",
@@ -89,7 +117,6 @@ const CompletedOrders = () => {
         },
         body: JSON.stringify(updatedData),
       });
-
       if (!res.ok) throw new Error("Failed to update order");
       await fetchOrders();
       setEditingOrder(null);
@@ -100,14 +127,13 @@ const CompletedOrders = () => {
     }
   };
 
-  // ✅ Delete Order
   const deleteOrder = async (orderId) => {
+    // ... (your existing deleteOrder code is fine) ...
     try {
       const res = await fetch(`${API_URL}/${orderId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!res.ok) throw new Error("Failed to delete order");
       await fetchOrders();
       setShowConfirmDelete(null);
@@ -118,7 +144,7 @@ const CompletedOrders = () => {
     }
   };
 
-  // ✅ Initial Fetch
+  // ✅ Initial Fetch (Updated dependencies)
   useEffect(() => {
     if (!token) {
       showNotification("No token found. Please login first", "error");
@@ -127,17 +153,18 @@ const CompletedOrders = () => {
     }
     fetchOrders();
     fetchMenuItems();
-  }, [token, fetchMenuItems]);
+    fetchRestaurantDetails(); // 👈 Call the new function
+  }, [token, fetchOrders, fetchMenuItems, fetchRestaurantDetails]); // 👈 Add dependencies
 
   const completedOrders = orders.filter((o) => o.status === "completed");
 
-  // ✅ SAME UI - untouched
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8 relative">
-      {/* Notification Modal */}
+      {/* ... (Notification Modal remains the same) ... */}
       <AnimatePresence>
         {notification.show && (
           <motion.div
+            // ... (notification JSX) ...
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -148,7 +175,13 @@ const CompletedOrders = () => {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300, duration: 0.3 }}
+              // ... (rest of the modal JSX) ...
+              transition={{
+                type: "spring",
+                damping: 25,
+                stiffness: 300,
+                duration: 0.3,
+              }}
               className={`relative rounded-3xl shadow-2xl p-8 w-full max-w-sm mx-auto ${
                 notification.type === "success"
                   ? "bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200"
@@ -157,6 +190,7 @@ const CompletedOrders = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center">
+                {/* ... (icon, text, button) ... */}
                 <div
                   className={`w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-6 ${
                     notification.type === "success"
@@ -165,19 +199,51 @@ const CompletedOrders = () => {
                   }`}
                 >
                   {notification.type === "success" ? (
-                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <svg
+                      className="w-12 h-12"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                   ) : (
-                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="w-12 h-12"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   )}
                 </div>
-                <h3 className={`text-3xl font-bold mb-4 ${notification.type === "success" ? "text-green-900" : "text-red-900"}`}>
+                <h3
+                  className={`text-3xl font-bold mb-4 ${
+                    notification.type === "success"
+                      ? "text-green-900"
+                      : "text-red-900"
+                  }`}
+                >
                   {notification.type === "success" ? "Success!" : "Oops!"}
                 </h3>
-                <p className={`text-xl mb-8 leading-relaxed ${notification.type === "success" ? "text-green-700" : "text-red-700"}`}>
+                <p
+                  className={`text-xl mb-8 leading-relaxed ${
+                    notification.type === "success"
+                      ? "text-green-700"
+                      : "text-red-700"
+                  }`}
+                >
                   {notification.message}
                 </p>
                 <motion.button
@@ -198,26 +264,38 @@ const CompletedOrders = () => {
         )}
       </AnimatePresence>
 
-      {/* Table Section */}
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold text-gray-900 mb-6 flex justify-center">🏁 Completed Orders</h2>
-
+        <h2 className="text-3xl font-bold text-gray-900 mb-6 flex justify-center">
+          🏁 Completed Orders
+        </h2>
         <OrdersTable
           orders={completedOrders}
           loading={loading}
           error={error}
           setEditingOrder={setEditingOrder}
           setShowConfirmDelete={setShowConfirmDelete}
-          setSelectedItems={setSelectedItems}
+          // ✅ 3. FIX: Pass the correct prop name
+          setOrderForBillModal={setSelectedItems}
           updateOrder={updateOrder}
-          tableType = {tableType}
+          tableType={tableType}
         />
       </div>
 
-      {/* Modals */}
-      {selectedItems && <ItemsModal order={selectedItems} onClose={() => setSelectedItems(null)} />}
+      {/* ✅ 4. Pass restaurantDetails to the modal */}
+      {selectedItems && (
+        <ItemsModal
+          order={selectedItems}
+          restaurantDetails={restaurantDetails} // 👈 Pass details
+          onClose={() => setSelectedItems(null)}
+        />
+      )}
       {editingOrder && (
-        <EditOrderModal editingOrder={editingOrder} setEditingOrder={setEditingOrder} updateOrder={updateOrder} menuItems={menuItems} />
+        <EditOrderModal
+          editingOrder={editingOrder}
+          setEditingOrder={setEditingOrder}
+          updateOrder={updateOrder}
+          menuItems={menuItems}
+        />
       )}
       {showConfirmDelete && (
         <DeleteModal
