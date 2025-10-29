@@ -1,7 +1,11 @@
+import config from "../config";
+
 export const getMenu = async () => {
+  console.log("🔍 API Base URL:", config.BASE_URL);
   try {
     const response = await fetch(
-      `/api/menu/public` // no param added
+      `${config.BASE_URL}/api/menu/public` // no param added
+      
     );
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

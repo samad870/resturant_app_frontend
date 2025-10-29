@@ -1,9 +1,11 @@
-export const getRestaurant = async () => {
-    console.log("🔍 API Base URL:", import.meta.env.VITE_API_BASE_URL);
+import config from "../config";
 
+export const getRestaurant = async () => {
+    console.log("🔍 API Base URL:", config.BASE_URL);
   try {
     const response = await fetch(
-      `/api/restaurant/public`
+      `${config.BASE_URL}/api/restaurant/public`,
+      
     );
 
     if (!response.ok) {

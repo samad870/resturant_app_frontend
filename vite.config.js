@@ -8,17 +8,12 @@ export default defineConfig({
     proxy: {
       "/api": {
         target: "http://localhost:4000",
-        // target: "https: //api.flamendough.com",
-        changeOrigin: true,
-      //  rewrite: (path) => path.replace(/^\/api/, ""),
+        changeOrigin: true, 
       },
     },
   },
-  // eslint-disable-next-line no-dupe-keys
-  // plugins: [react()],
   resolve: {
     alias: {
-      // eslint-disable-next-line no-undef
       "@": path.resolve(__dirname, "./src"),
     },
   },
