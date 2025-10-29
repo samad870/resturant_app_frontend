@@ -1,11 +1,10 @@
-"use client"; // if your project requires it (Next.js app dir). Remove if not needed.
+"use client";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, removeFromCart } from "../../features/cartSlice";
 import { Dot } from "lucide-react";
 import { Button } from "../ui/button";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-// Group items by category
 const groupByCategory = (items) => {
   return items.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
@@ -17,8 +16,8 @@ const groupByCategory = (items) => {
 export default function FoodListing({ menu, onQuantityChange }) {
   const groupedMenu = groupByCategory(menu || []);
   const dispatch = useDispatch();
-
   const cartItems = useSelector((state) => state.cart.items || {});
+  const [expandedItems, setExpandedItems] = useState({}); // ✅ Track expanded descriptions
 
   useEffect(() => {
     if (onQuantityChange) {
@@ -38,92 +37,140 @@ export default function FoodListing({ menu, onQuantityChange }) {
     dispatch(removeFromCart(item._id));
   };
 
+  // ✅ Toggle "Read More"
+  const toggleExpand = (id) => {
+    setExpandedItems((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
   return (
-    <div className="my-4 flex flex-col pb-20 px-2">
+    <div className="bg-gray-50 flex flex-col pb-20 px-3 pt-6">
       {Object.keys(groupedMenu).map((category) => (
-        <div key={category} id={`category-${category}`} className="mb-6">
-          <div className="flex items-center gap-2 font-normal mb-2">
-            <Dot className="text-primary" size={12} strokeWidth={24} />
-            <span className="text-lg font-bold">{category}</span>
+        <div key={category} id={`category-${category}`} className="mb-10">
+          {/* ✅ Category Header */}
+          <div className="flex items-center gap-2 mb-4">
+            <Dot className="text-primary" size={14} strokeWidth={24} />
+            <h2 className="text-xl font-semibold text-gray-800 tracking-wide">
+              {category}
+            </h2>
           </div>
 
-          {groupedMenu[category].map((item) => {
-            const quantity = cartItems[item._id]?.quantity || 0;
-            const isUnavailable = !item.available;
+          {/* ✅ Food Cards */}
+          <div className="flex flex-col gap-5">
+            {groupedMenu[category].map((item) => {
+              const quantity = cartItems[item._id]?.quantity || 0;
+              const isUnavailable = !item.available;
+              const descriptionWords = item.description?.split(" ") || [];
+              const showReadMore = descriptionWords.length > 70;
+              const shortDesc = descriptionWords.slice(0, 70).join(" ") + "…";
+              const isExpanded = expandedItems[item._id];
 
-            return (
-              <div
-                key={item._id}
-                className={`py-2 transition-opacity duration-300 ${
-                  isUnavailable ? "opacity-50" : "opacity-100"
-                }`}
-              >
+              return (
                 <div
-                  className={`border rounded-lg flex gap-1 shadow-md transition-colors ${
-                    isUnavailable ? "bg-gray-100" : "bg-white"
+                  key={item._id}
+                  className={`flex items-start border border-gray-100 bg-white rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-300 overflow-hidden ${
+                    isUnavailable ? "opacity-60 grayscale" : "opacity-100"
                   }`}
                 >
-                  <div className="h-32 w-40 overflow-hidden">
+                  {/* ✅ Image Section */}
+                  <div className="relative w-40 h-36 flex-shrink-0 overflow-hidden rounded-l-2xl">
                     <img
-                      className="w-full h-full object-cover object-center rounded-l-lg"
                       src={item.image?.url}
                       alt={item.name}
+                      className="w-full h-full object-cover object-center transform group-hover:scale-110 transition-transform duration-500"
                     />
-                  </div>
-                  <div className="p-2 text-xs font-light flex flex-col justify-between flex-1">
-                    <div className="flex items-center gap-1">
-                      {item.type === "veg" ? (
-                        <Dot
-                          size={18}
-                          strokeWidth={12}
-                          className="border-2 border-green-800 text-green-800"
-                        />
-                      ) : (
-                        <Dot
-                          size={18}
-                          strokeWidth={12}
-                          className="border-2 border-red-600 text-red-600"
-                        />
-                      )}
-                      <span className="text-sm font-medium">{item.name}</span>
-                    </div>
-                    <div className="text-gray-500">{item.description}</div>
-                    <div className="flex justify-between gap-1 items-end">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-semibold">
-                          Starts From Rs {item.price.toFixed(2)}
-                        </span>
+                    {isUnavailable && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-sm font-semibold">
+                        Not Available
                       </div>
-                      {!item.available ? (
-                        <div className="text-red-500 text-xs font-semibold">
-                          Not Available
-                        </div>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Button
-                            className="h-6 w-6"
-                            onClick={() => decrement(item)}
-                            disabled={quantity === 0}
+                    )}
+                  </div>
+
+                  {/* ✅ Details Section */}
+                  <div className="flex flex-col justify-between p-3 flex-1 h-36">
+                    {/* Top Info */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        {item.type === "veg" ? (
+                          <Dot
+                            size={18}
+                            strokeWidth={12}
+                            className="border-2 border-green-700 text-green-700"
+                          />
+                        ) : (
+                          <Dot
+                            size={18}
+                            strokeWidth={12}
+                            className="border-2 border-red-600 text-red-600"
+                          />
+                        )}
+                        <h3 className="text-base font-semibold text-gray-900 leading-snug">
+                          {item.name}
+                        </h3>
+                      </div>
+
+                      {/* ✅ Description with Read More */}
+                      <p className="text-gray-500 text-sm leading-relaxed">
+                        {isExpanded ? item.description : shortDesc}
+                        {showReadMore && (
+                          <button
+                            onClick={() => toggleExpand(item._id)}
+                            className="ml-1 text-primary font-medium hover:underline"
                           >
-                            -
-                          </Button>
-                          <div className="border rounded-sm h-6 w-6 flex justify-center items-center">
-                            {quantity}
-                          </div>
-                          <Button
-                            className="h-6 w-6"
-                            onClick={() => increment(item)}
-                          >
-                            +
-                          </Button>
+                            {isExpanded ? "Read less" : "Read more"}
+                          </button>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Bottom Info */}
+                    <div className="flex justify-between items-end mt-2">
+                      <span className="text-gray-900 font-semibold text-[15px]">
+                        ₹{item.price.toFixed(2)}
+                      </span>
+
+                      {!isUnavailable && (
+                        <div className="flex items-center gap-2">
+                          {quantity > 0 ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => decrement(item)}
+                                className="rounded-full h-8 w-8 p-0 text-lg font-bold border-gray-300"
+                              >
+                                -
+                              </Button>
+                              <span className="text-sm font-medium min-w-[24px] text-center">
+                                {quantity}
+                              </span>
+                              <Button
+                                size="sm"
+                                onClick={() => increment(item)}
+                                className="rounded-full h-8 w-8 p-0 text-lg font-bold bg-primary text-white hover:bg-primary/90"
+                              >
+                                +
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => increment(item)}
+                              className="rounded-full px-4 text-sm font-semibold bg-primary hover:bg-primary/90 text-white"
+                            >
+                              Add
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       ))}
     </div>

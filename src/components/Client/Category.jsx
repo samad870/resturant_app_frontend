@@ -13,14 +13,18 @@ export default function Category({
   );
 
   return (
-    <div className="my-4 flex flex-col pl-2">
-      <div className="flex items-center gap-2 font-normal mb-3">
-        <Layers className="text-primary" size={24} strokeWidth={2.5} />
-        <span className="text-lg">{title}</span>
+    <div className="mt-4 flex flex-col pl-2">
+      <div className="flex items-center gap-2">
+        <div className="bg-gray-100 p-2 rounded-xl shadow-sm">
+          <Layers className="text-gray-700" size={20} strokeWidth={2.2} />
+        </div>
+        <h2 className="text-xl font-semibold text-gray-800 tracking-wide">
+          {title}
+        </h2>
       </div>
 
       <div className="overflow-x-scroll scroll-hidden py-2 mr-2">
-        <div className="flex items-center gap-4 font-light">
+        <div className="flex items-center gap-2 font-light">
           {/* ✅ All Button - Fixed height */}
           <div
             onClick={() => onCategoryClick?.(null)}
@@ -38,13 +42,13 @@ export default function Category({
             <div
               key={index}
               onClick={() => onCategoryClick?.(item.category)}
-              className={`flex items-center border px-3 py-2 shadow-md rounded-3xl cursor-pointer hover:shadow-lg transition flex-shrink-0 h-14 ${
+              className={`flex items-center border px-3 py-2 shadow-md rounded-3xl cursor-pointer hover:shadow-lg transition flex-shrink-0 h-14  ${
                 activeCategory === item.category
                   ? "bg-primary text-white"
                   : "bg-white text-black"
               }`}
             >
-              <div className="w-10 h-10 overflow-hidden rounded-full mr-3 flex-shrink-0">
+              <div className="w-10 h-10 overflow-hidden rounded-full mr-3 flex-shrink-0 ">
                 <img
                   className="w-full h-full object-cover object-center"
                   src={item?.image?.url}

@@ -91,7 +91,7 @@ export default function Home() {
 
   return (
     <>
-      <div className="sticky top-0 bg-white z-20">
+      <div className="sticky top-0 bg-white z-20 border-b shadow-sm ">
         <Header
           logo={restaurantData.restaurant?.logo?.url}
           siteName={restaurantData.restaurant?.restaurantName}
@@ -105,7 +105,7 @@ export default function Home() {
           activeCategory={activeCategory}
         />
       </div>
-      <FoodListing menu={filteredMenu} onQuantityChange={setTotal} />
+      <FoodListing className="relative z-50" menu={filteredMenu} onQuantityChange={setTotal} />
       <Copywright />
     </>
   );
