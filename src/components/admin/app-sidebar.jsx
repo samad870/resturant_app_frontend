@@ -1,15 +1,13 @@
 import * as React from "react";
 import {
-  ScrollText,
   SquareMenu,
-  LifeBuoy,
-  Send,
-  Frame,
-  PieChart,
-  Map,
+  User,
+  ListOrdered,
+  ChartNoAxesCombined,
 } from "lucide-react";
 import { NavMain } from "@/components/admin/nav-main";
 import { NavUser } from "@/components/admin/nav-user";
+
 import {
   Sidebar,
   SidebarContent,
@@ -31,62 +29,52 @@ export function AppSidebar({ ...props }) {
   const userData = {
     name: localStorage.getItem("userName") || "User",
     email: localStorage.getItem("userEmail") || "",
-    avatar: localStorage.getItem("userAvatar") || ""
+    avatar: localStorage.getItem("userAvatar") || "",
   };
 
   const data = {
     user: userData,
     navMain: [
-      {
-        title: "Details",
-        url: "#",
-        icon: ScrollText,
-        isActive: true,
-        items: [
-          { title: "Admin Profile", url: "/admin/restaurant-detail" },
-          { title: "Update Profile", url: "/admin/profile-update" },
-        ],
-      },
+      // {
+      //   title: "Profile Management",
+      //   url: "#",
+      //   icon: User,
+      //   isActive: true,
+      //   items: [
+      //     { title: "Profile", url: "/admin/profile" },
+      //     { title: "Update Profile", url: "/admin/update-profile" },
+      //   ],
+      // },
       {
         title: "Order Management",
         url: "#",
-        icon: ScrollText,
+        icon: ListOrdered,
         isActive: true,
         items: [
-          { title: "Order List", url: "/admin/pendingorder" },
+          { title: "Orders", url: "/admin/orders" },
           { title: "Completed Order", url: "/admin/completedorder" },
           { title: "Cancelled Order", url: "/admin/cancelledorder" },
         ],
       },
       {
-        title: "Item Management",
+        title: "Menu Management",
         url: "#",
         icon: SquareMenu,
         isActive: true,
         items: [
-          { title: "Add Item", url: "/admin/addItems" },
-          { title: "Item List", url: "/admin/listItem" },
+          { title: "Menu", url: "/admin/menu" },
         ],
       },
       {
         title: "Observability",
         url: "#",
-        icon: SquareMenu,
+        icon: ChartNoAxesCombined,
         isActive: true,
         items: [
           { title: "Sales", url: "/admin/sales" },
           { title: "Revenue", url: "/admin/revenue" },
         ],
       },
-    ],
-    navSecondary: [
-      { title: "Support", url: "#", icon: LifeBuoy },
-      { title: "Feedback", url: "#", icon: Send },
-    ],
-    projects: [
-      { name: "Design Engineering", url: "#", icon: Frame },
-      { name: "Sales & Marketing", url: "#", icon: PieChart },
-      { name: "Travel", url: "#", icon: Map },
     ],
   };
 
@@ -106,18 +94,12 @@ export function AppSidebar({ ...props }) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild className="mt-9">
+            <SidebarMenuButton size="lg" asChild className="mt-12">
               <Link
                 to="/admin"
                 onClick={() => window.innerWidth < 1024 && toggleSidebar(false)}
               >
-                <div className="flex items-center gap-2">
-                  <img src={logo} alt="Logo" className="h-12 w-auto" />
-                  <div className="flex flex-col">
-                    {/* <span className="font-bold text-lg text-gray-900">TapNOrder</span> */}
-                    {/* <span className="text-xs text-gray-500">Admin Panel</span> */}
-                  </div>
-                </div>
+                <img src={logo} alt="Logo" className="h-12 w-auto " />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -135,40 +117,6 @@ export function AppSidebar({ ...props }) {
             })),
           }))}
         />
-        
-        {/* Secondary Navigation */}
-        {/* <SidebarMenu className="mt-8">
-          <SidebarMenuItem>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 mb-2">
-              Support
-            </div>
-            {data.navSecondary.map((item) => (
-              <SidebarMenuButton key={item.title} asChild>
-                <Link to={item.url}>
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            ))}
-          </SidebarMenuItem>
-        </SidebarMenu> */}
-
-        {/* Projects Section */}
-        {/* <SidebarMenu className="mt-8">
-          <SidebarMenuItem>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 mb-2">
-              Projects
-            </div>
-            {data.projects.map((project) => (
-              <SidebarMenuButton key={project.name} asChild>
-                <Link to={project.url}>
-                  <project.icon className="h-4 w-4" />
-                  <span>{project.name}</span>
-                </Link>
-              </SidebarMenuButton>
-            ))}
-          </SidebarMenuItem>
-        </SidebarMenu> */}
       </SidebarContent>
 
       {/* Footer */}

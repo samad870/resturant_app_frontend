@@ -8,7 +8,7 @@ const OrderRow = ({
   orderNum,
   setEditingOrder,
   setShowConfirmDelete,
-  setSelectedItems,
+  setOrderForBillModal,
   updateOrder,
   tableType, // 👈 receive from parent
 }) => {
@@ -30,21 +30,23 @@ const OrderRow = ({
       <td className="px-6 py-4">{order.tableId || "N/A"}</td>
 
       <td className="px-6 py-4">{order.orderType}</td>
-
-      <td className="px-6 py-4">
-        <StatusDropdown order={order} updateOrder={updateOrder} />
-      </td>
-
-      <td className="px-6 py-4">
+       <td className="px-6 py-4">
         <button
-          onClick={() => setSelectedItems(order)}
+          onClick={() => setOrderForBillModal(order)}
           className="px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition font-medium"
         >
           View Items
         </button>
       </td>
+      {tableType === "pending" && (
+        <td className="px-6 py-4">
+          <StatusDropdown order={order} updateOrder={updateOrder} />
+        </td>
+      )}  
 
-     {/* 👇 Show Actions only if tableType === "pending" */}
+     
+
+      {/* 👇 Show Actions only if tableType === "pending" */}
       {tableType === "pending" && (
         <td className="px-6 py-4 text-right flex space-x-2">
           <button

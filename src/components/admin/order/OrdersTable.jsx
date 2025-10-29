@@ -1,3 +1,5 @@
+
+
 import React from "react";
 import OrderRow from "./OrderRow";
 import { MdModeEdit } from "react-icons/md";
@@ -9,9 +11,9 @@ const OrdersTable = ({
   error,
   setEditingOrder,
   setShowConfirmDelete,
-  setSelectedItems,
+  setOrderForBillModal,
   updateOrder,
-  tableType
+  tableType,
 }) => {
   // ✅ 12-hour format time with AM/PM
   const formatTime = (dateString) => {
@@ -36,11 +38,14 @@ const OrdersTable = ({
               <th className="px-6 py-4">Phone</th>
               <th className="px-6 py-4">Table ID</th>
               <th className="px-6 py-4">Order Type</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4">Items</th>
+              {/* <th className="px-6 py-4">Status</th> */}
               {/* 👇 Only show Actions column if tableType is "pending" */}
+              <th className="px-6 py-4">Items</th>
               {tableType === "pending" && (
-                <th className="px-6 py-4 text-right">Actions</th>
+                <>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </>
               )}
             </tr>
           </thead>
@@ -79,7 +84,7 @@ const OrdersTable = ({
                   orderNum={300 + orders.length - index - 1}
                   setEditingOrder={setEditingOrder}
                   setShowConfirmDelete={setShowConfirmDelete}
-                  setSelectedItems={setSelectedItems}
+                  setOrderForBillModal={setOrderForBillModal}
                   updateOrder={updateOrder}
                   tableType={tableType}
                 />
@@ -150,7 +155,7 @@ const OrdersTable = ({
 
                 <div className="flex flex-wrap gap-2 pt-2">
                   <button
-                    onClick={() => setSelectedItems(order)}
+                    onClick={() => setOrderForBillModal(order)}
                     className="px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition font-medium"
                   >
                     View Items

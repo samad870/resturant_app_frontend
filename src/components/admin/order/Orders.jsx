@@ -1,52 +1,92 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState, useCallback } from "react";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import OrdersTable from "./OrdersTable";
 import EditOrderModal from "./EditOrderModal";
 import DeleteModal from "./DeleteModal";
-import ItemsModal from "./ItemsModal";
+import ItemsModal from "./ItemsModal"; // This is the Bill Modal
 import config from "../../../config";
-import { SlRefresh } from "react-icons/sl";
+import { SlRefresh } from "react-icons/sl"; // ✅ 1. ADDED IMPORT
 
-const PendingOrders = () => {
+const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingOrder, setEditingOrder] = useState(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(null);
-  const [selectedItems, setSelectedItems] = useState(null);
+  const [orderForBillModal, setOrderForBillModal] = useState(null); 
   const [menuItems, setMenuItems] = useState([]);
-  const [notification, setNotification] = useState({ show: false, message: "", type: "" });
-   const [lastUpdated, setLastUpdated] = useState(null);
-  // ✅ Persisted Auto Refresh Settings
-  const [autoRefresh, setAutoRefresh] = useState(localStorage.getItem("autoRefresh") || "OFF");
+  const [restaurantDetails, setRestaurantDetails] = useState(null);
+  const [notification, setNotification] = useState({
+    show: false,
+    message: "",
+    type: "",
+  });
+
+  // ✅ State from PendingOrders
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [autoRefresh, setAutoRefresh] = useState(
+    localStorage.getItem("autoRefresh") || "OFF"
+  );
   const [autoRefreshInterval, setAutoRefreshInterval] = useState(null);
+
 
 
   const token = localStorage.getItem("token") || "";
   const API_URL = `${config.BASE_URL}/api/order`;
-  const tableType = "pending"
 
-
-  // ✅ Show Notification with auto-close
   const showNotification = (message, type = "success") => {
     setNotification({ show: true, message, type });
-    setTimeout(() => setNotification({ show: false, message: "", type: "" }), 3000);
+    setTimeout(
+      () => setNotification({ show: false, message: "", type: "" }),
+      3000
+    );
   };
 
-  const closeNotification = () => setNotification({ show: false, message: "", type: "" });
+  const closeNotification = () =>
+    setNotification({ show: false, message: "", type: "" });
 
-  // ✅ Fetch Orders
+  const fetchRestaurantDetails = useCallback(async () => {
+    if (!token) return; 
+    try {
+      const res = await fetch(`${config.BASE_URL}/api/restaurant/admin`, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+      if (!res.ok) throw new Error("Failed to fetch restaurant details");
+      
+      const data = await res.json();
+      
+      if (data.restaurant) {
+        setRestaurantDetails(data.restaurant); 
+      } else {
+        throw new Error("Restaurant data not found in response");
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification("Could not load restaurant details for bills", "error");
+    }
+  }, [token]);
+
   const fetchOrders = useCallback(async () => {
-    if (!token) return showNotification("No token found. Please login first", "error");
-
+    if (!token)
+      return showNotification("No token found. Please login first", "error");
     try {
       setLoading(true);
-      const res = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(API_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
+      console.log(data)
+      console.log(data)
       if (!Array.isArray(data)) throw new Error("Invalid data format from API");
       setOrders(data.reverse());
-      setLastUpdated(new Date()); // 👈 store last update time
+      setLastUpdated(new Date()); // Already here, perfect
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -54,13 +94,14 @@ const PendingOrders = () => {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, API_URL]);
 
-  // ✅ Fetch Menu Items
   const fetchMenuItems = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch(`${config.BASE_URL}/api/menu`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${config.BASE_URL}/api/menu`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error("Failed to fetch menu items");
       const data = await res.json();
       const items = Array.isArray(data) ? data : data.menu || data.data || [];
@@ -73,16 +114,18 @@ const PendingOrders = () => {
     }
   }, [token]);
 
-  // ✅ Update Order
-  const updateOrder = async (orderId, updatedData) => {
+ const updateOrder = async (orderId, updatedData) => {
     try {
       const res = await fetch(`${API_URL}/${orderId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(updatedData),
       });
       if (!res.ok) throw new Error("Failed to update order");
-      await fetchOrders();
+      await fetchOrders(); // This fetches new orders, which will trigger the sync effect
       setEditingOrder(null);
       showNotification("Order updated successfully!", "success");
     } catch (err) {
@@ -90,8 +133,30 @@ const PendingOrders = () => {
       showNotification(err.message, "error");
     }
   };
+  useEffect(() => {
+    // Check if the bill modal is currently open
+    if (orderForBillModal) {
+      // Find the updated version of this order from the main 'orders' list
+      const updatedOrder = orders.find(
+        (o) => o._id === orderForBillModal._id
+      );
 
-  // ✅ Delete Order
+      if (updatedOrder) {
+        // If we found the updated order, update the state
+        // This will pass the new 'order' prop to the modal,
+        // causing it to re-render with the fresh data.
+        setOrderForBillModal(updatedOrder);
+      } else {
+        // If the order wasn't found (e.g., it was deleted),
+        // just close the modal.
+        setOrderForBillModal(null);
+      }
+    }
+    // We ONLY want this effect to run when the 'orders' list itself changes.
+    // Do not add 'orderForBillModal' to this dependency array.
+  }, [orders]);
+
+  // ✅ 2. FILLED IN deleteOrder (copied from PendingOrders)
   const deleteOrder = async (orderId) => {
     try {
       const res = await fetch(`${API_URL}/${orderId}`, {
@@ -108,25 +173,21 @@ const PendingOrders = () => {
     }
   };
 
-   // ✅ Manual Refresh
+  // ✅ 3. ADDED REFRESH HANDLERS (copied from PendingOrders)
   const handleManualRefresh = async () => {
     await fetchOrders();
   };
 
-  // ✅ Start Auto Refresh
   const startAutoRefresh = (minutes) => {
     if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-
     const id = setInterval(() => {
       console.log("🔁 Auto-refresh triggered");
       fetchOrders();
     }, minutes * 60 * 1000);
-
     setAutoRefreshInterval(id);
     localStorage.setItem("autoRefresh", `${minutes} min`);
   };
 
-  // ✅ Stop Auto Refresh
   const stopAutoRefresh = () => {
     if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     setAutoRefresh("OFF");
@@ -134,7 +195,7 @@ const PendingOrders = () => {
     localStorage.setItem("autoRefresh", "OFF");
   };
 
-  // ✅ Initial Fetch
+  // Main useEffect (unchanged, still fetches restaurantDetails)
   useEffect(() => {
     if (!token) {
       showNotification("No token found. Please login first", "error");
@@ -143,9 +204,10 @@ const PendingOrders = () => {
     }
     fetchOrders();
     fetchMenuItems();
-  }, [token, fetchOrders, fetchMenuItems]);
+    fetchRestaurantDetails(); // 👈 Your logic is preserved
+  }, [token, fetchOrders, fetchMenuItems, fetchRestaurantDetails]);
 
-   // ✅ Load and Restore Saved Auto Refresh from localStorage
+  // ✅ 4. ADDED Auto-Refresh Persistence useEffect (copied from PendingOrders)
   useEffect(() => {
     const saved = localStorage.getItem("autoRefresh");
     if (saved && saved !== "OFF") {
@@ -158,13 +220,14 @@ const PendingOrders = () => {
     return () => {
       if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     };
-  }, []);
+  }, []); // Runs once on mount
 
   const pendingOrders = orders.filter((o) => o.status === "pending");
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8 relative">
-      {/* Notification Modal */}
+      
+      {/* ✅ 5. ADDED Notification Modal JSX (copied from PendingOrders) */}
       <AnimatePresence>
         {notification.show && (
           <motion.div
@@ -227,14 +290,12 @@ const PendingOrders = () => {
           </motion.div>
         )}
       </AnimatePresence>
-     
-      {/* Table Section */}
+      
+      {/* ✅ 6. ADDED Header/Buttons JSX (copied from PendingOrders) */}
       <div className="max-w-7xl mx-auto">
-        {/* Single line layout for mobile */}
         <div className="flex flex-row items-center justify-between mb-6 gap-3">
           <h2 className="text-xl sm:text-3xl font-bold text-gray-900 whitespace-nowrap">⏳ Pending</h2>
 
-          {/* ✅ Top Right Buttons - Single line on mobile */}
           <div className="flex items-center gap-2">
             {/* Refresh Button */}
             <button
@@ -245,7 +306,7 @@ const PendingOrders = () => {
               <span className="hidden xs:inline text-xs sm:text-sm">Refresh</span>
             </button>
 
-            {/* Auto Refresh Dropdown - Compact on mobile */}
+            {/* Auto Refresh Dropdown */}
             <div className="flex items-center gap-1 sm:gap-2">
               <label htmlFor="autoRefresh" className="hidden sm:inline text-sm text-gray-600 font-medium whitespace-nowrap">
                 Auto Refresh:
@@ -273,7 +334,7 @@ const PendingOrders = () => {
           </div>
         </div>
 
-        {/* ✅ Last updated text */}
+        {/* Last updated text */}
         {lastUpdated && (
           <p className="text-right text-xs text-gray-500 mb-2">
             Last updated: {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -286,18 +347,37 @@ const PendingOrders = () => {
           error={error}
           setEditingOrder={setEditingOrder}
           setShowConfirmDelete={setShowConfirmDelete}
-          setSelectedItems={setSelectedItems}
+          setOrderForBillModal={setOrderForBillModal} 
           updateOrder={updateOrder}
-          tableType={tableType}
+          tableType="pending" // ✅ 7. Added tableType prop
         />
       </div>
 
-      {/* Modals */}
-      {selectedItems && <ItemsModal order={selectedItems} onClose={() => setSelectedItems(null)} />}
-      {editingOrder && <EditOrderModal editingOrder={editingOrder} setEditingOrder={setEditingOrder} updateOrder={updateOrder} menuItems={menuItems} />}
-      {showConfirmDelete && <DeleteModal order={showConfirmDelete} onCancel={() => setShowConfirmDelete(null)} onDelete={() => deleteOrder(showConfirmDelete._id)} />}
+      {/* Modals (Unchanged) */}
+      {orderForBillModal && ( 
+        <ItemsModal
+          order={orderForBillModal}
+          restaurantDetails={restaurantDetails} // 👈 Your prop is preserved
+          onClose={() => setOrderForBillModal(null)}
+        />
+      )}
+      {editingOrder && (
+        <EditOrderModal
+          editingOrder={editingOrder}
+          setEditingOrder={setEditingOrder}
+          updateOrder={updateOrder}
+          menuItems={menuItems}
+        />
+      )}
+      {showConfirmDelete && (
+        <DeleteModal
+          order={showConfirmDelete}
+          onCancel={() => setShowConfirmDelete(null)}
+          onDelete={() => deleteOrder(showConfirmDelete._id)}
+        />
+      )}
     </div>
   );
 };
 
-export default PendingOrders;
+export default Orders

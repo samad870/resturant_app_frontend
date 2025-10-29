@@ -1,4 +1,6 @@
+/* eslint-disable no-unused-vars */
 import React, { useCallback, useEffect, useState } from "react";
+
 import { motion, AnimatePresence } from "framer-motion";
 import OrdersTable from "./OrdersTable";
 import EditOrderModal from "./EditOrderModal";
@@ -14,25 +16,37 @@ const CancelledOrders = () => {
   const [showConfirmDelete, setShowConfirmDelete] = useState(null);
   const [selectedItems, setSelectedItems] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
-  const [notification, setNotification] = useState({ show: false, message: "", type: "" });
+  const [notification, setNotification] = useState({
+    show: false,
+    message: "",
+    type: "",
+  });
+
+  // 1. Add state for restaurant details
+  const [restaurantDetails, setRestaurantDetails] = useState(null);
 
   const [token] = useState(() => localStorage.getItem("token") || "");
-
-  const API_URL = `${config.BASE_URL}/api/order`; // proxy
+  const API_URL = `${config.BASE_URL}/api/order`;
   const tableType = "cancelled";
 
-
-  // ✅ Notification functions
   const showNotification = (message, type = "success") => {
     setNotification({ show: true, message, type });
+    setTimeout(
+      () => setNotification({ show: false, message: "", type: "" }),
+      2000
+    );
   };
-  const closeNotification = () => setNotification({ show: false, message: "", type: "" });
+  const closeNotification = () =>
+    setNotification({ show: false, message: "", type: "" });
 
-  // ✅ Fetch all orders
-  const fetchOrders = async () => {
+  // Wrapped in useCallback
+  const fetchOrders = useCallback(async () => {
+    if (!token) return; // Guard clause
     try {
       setLoading(true);
-      const res = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(API_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
       setOrders(data.reverse());
@@ -42,29 +56,55 @@ const CancelledOrders = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, API_URL]); // Added dependencies
 
-  // ✅ Fetch menu items with safe check
   const fetchMenuItems = useCallback(async () => {
-    if (!token) return; // token check
+    if (!token) return;
     try {
-      const res = await fetch(`${config.BASE_URL}/api/menu`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${config.BASE_URL}/api/menu`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error("Failed to fetch menu items");
       const data = await res.json();
       setMenuItems(Array.isArray(data) ? data : data.menu || data.data || []);
     } catch (err) {
-      // Error dikhao tabhi jab token valid ho
       if (token) showNotification("Failed to fetch menu items", "error");
       setMenuItems([]);
     }
   }, [token]);
 
-  // ✅ Update order
+  // 2. Add function to fetch restaurant details
+  const fetchRestaurantDetails = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${config.BASE_URL}/api/restaurant/admin`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+      if (!res.ok) throw new Error("Failed to fetch restaurant details");
+      const data = await res.json();
+      if (data.restaurant) {
+        setRestaurantDetails(data.restaurant);
+      } else {
+        throw new Error("Restaurant data not found in response");
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification("Could not load restaurant details for bills", "error");
+    }
+  }, [token]);
+
   const updateOrder = async (orderId, updatedData) => {
     try {
       const res = await fetch(`${API_URL}/${orderId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(updatedData),
       });
       if (!res.ok) throw new Error("Failed to update order");
@@ -76,7 +116,6 @@ const CancelledOrders = () => {
     }
   };
 
-  // ✅ Delete order
   const deleteOrder = async (orderId) => {
     try {
       const res = await fetch(`${API_URL}/${orderId}`, {
@@ -92,7 +131,7 @@ const CancelledOrders = () => {
     }
   };
 
-  // ✅ Fixed useEffect (no error after redirect)
+  // Cleaned up useEffect
   useEffect(() => {
     if (!token) {
       setLoading(false);
@@ -100,20 +139,16 @@ const CancelledOrders = () => {
       return;
     }
 
-    const timer = setTimeout(() => {
-      fetchOrders();
-      fetchMenuItems();
-    }, 300); // small delay for smooth load
+    fetchOrders();
+    fetchMenuItems();
+    fetchRestaurantDetails(); // Call the new function
+  }, [token, fetchOrders, fetchMenuItems, fetchRestaurantDetails]); // Add dependencies
 
-    return () => clearTimeout(timer);
-  }, [token]);
-
-  // ✅ Filter cancelled orders
   const cancelledOrders = orders.filter((o) => o.status === "cancelled");
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8 relative">
-      {/* Notification Modal */}
+      {/* ... (Notification Modal remains the same) ... */}
       <AnimatePresence>
         {notification.show && (
           <motion.div
@@ -127,7 +162,12 @@ const CancelledOrders = () => {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300, duration: 0.3 }}
+              transition={{
+                type: "spring",
+                damping: 25,
+                stiffness: 300,
+                duration: 0.3,
+              }}
               className={`relative rounded-3xl shadow-2xl p-8 w-full max-w-sm mx-auto ${
                 notification.type === "success"
                   ? "bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200"
@@ -144,11 +184,26 @@ const CancelledOrders = () => {
                   }`}
                 >
                   {notification.type === "success" ? (
-                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <svg
+                      className="w-12 h-12"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                   ) : (
-                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-12 h-12"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -158,25 +213,35 @@ const CancelledOrders = () => {
                     </svg>
                   )}
                 </div>
+                {/* FIX 1: Added `className` prop and some matching styles.
+                 */}
                 <h3
-                  className={`text-3xl font-bold mb-4 ${
-                    notification.type === "success" ? "text-green-900" : "text-red-900"
+                  className={`text-2xl font-bold mb-4 ${
+                    notification.type === "success"
+                      ? "text-green-900"
+                      : "text-red-900"
                   }`}
                 >
                   {notification.type === "success" ? "Success!" : "Oops!"}
                 </h3>
                 <p
                   className={`text-xl mb-8 leading-relaxed ${
-                    notification.type === "success" ? "text-green-700" : "text-red-700"
+                    notification.type === "success"
+                      ? "text-green-700"
+                      : "text-red-700"
                   }`}
                 >
                   {notification.message}
+                  {/* FIX 2: Removed extra 's' and '</div>' from here.
+                   */}
                 </p>
                 <motion.button
                   onClick={closeNotification}
                   whileTap={{ scale: 0.95 }}
                   whileHover={{ scale: 1.02 }}
                   className={`w-full py-5 rounded-2xl text-xl font-bold shadow-lg transition-all ${
+                    /* FIX 3: Removed stray 'C' and 'Â' characters from this template literal.
+                     */
                     notification.type === "success"
                       ? "bg-green-500 text-white hover:bg-green-600 shadow-green-200"
                       : "bg-red-500 text-white hover:bg-red-600 shadow-red-200"
@@ -201,13 +266,21 @@ const CancelledOrders = () => {
           error={error}
           setEditingOrder={setEditingOrder}
           setShowConfirmDelete={setShowConfirmDelete}
-          setSelectedItems={setSelectedItems}
+          // 3. FIX: Pass the correct prop name (Your comment was correct)
+          setOrderForBillModal={setSelectedItems}
           updateOrder={updateOrder}
-          tableType = {tableType}
+          tableType={tableType}
         />
       </div>
 
-      {selectedItems && <ItemsModal order={selectedItems} onClose={() => setSelectedItems(null)} />}
+      {/* 4. Pass restaurantDetails to the modal */}
+      {selectedItems && (
+        <ItemsModal
+          order={selectedItems}
+          restaurantDetails={restaurantDetails} // Pass details
+          onClose={() => setSelectedItems(null)}
+        />
+      )}
       {editingOrder && (
         <EditOrderModal
           editingOrder={editingOrder}

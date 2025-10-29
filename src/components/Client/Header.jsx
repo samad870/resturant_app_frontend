@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Clock, MapPin, Phone } from "lucide-react";
+import { X, Clock, MapPin, Phone, Search, UtensilsCrossed } from "lucide-react";
 import { FiShoppingCart } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -23,12 +23,19 @@ import { useRestaurant } from "../../hooks/useRestaurant";
 import config from "../../config";
 import OrderFormModal from "./OrderFormModal";
 
-export default function Header({ logo, siteName = "Default Name" }) {
+export default function Header({
+  logo,
+  siteName = "Default Name",
+  search,
+  onSearch,
+}) {
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { data: restaurantData } = useRestaurant();
+  const searchRef = useRef(null);
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -53,6 +60,31 @@ export default function Header({ logo, siteName = "Default Name" }) {
   const [activeOrders, setActiveOrders] = useState([]);
   const expiryTimersRef = useRef({});
   const ONE_HOUR_MS = 60 * 60 * 1000;
+
+  // Close search when clicking outside or pressing Escape
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && isSearchOpen) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    if (isSearchOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isSearchOpen]);
 
   const scheduleExpiry = (orderId, remainingMs) => {
     if (expiryTimersRef.current[orderId]) {
@@ -429,7 +461,10 @@ export default function Header({ logo, siteName = "Default Name" }) {
         )}
 
         {/* Header */}
-        <header className="flex items-center justify-between p-3 ">
+        <header
+          className="flex items-center justify-between p-3 relative"
+          ref={searchRef}
+        >
           <Link to="/" className="flex items-center space-x-2">
             {logo && <img src={logo} alt="Logo" className="h-12 w-auto" />}
             <span className="text-primary font-mostrate text-2xl">
@@ -437,14 +472,82 @@ export default function Header({ logo, siteName = "Default Name" }) {
             </span>
           </Link>
 
-          <button onClick={() => setIsCartOpen(true)} className="relative">
-            <FiShoppingCart className="w-6 h-6 text-gray-700 hover:text-black" />
-            {activeOrders.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                {activeOrders.length}
-              </span>
+          <div className="flex items-center space-x-3">
+            {/* Show typed search text as a small pill */}
+            {(search || "").trim() && (
+              <>
+                {/* Restore Clear button next to query */}
+                <button
+                  onClick={() => onSearch("")}
+                  className="flex items-center relative px-3 py-1 rounded-full border border-primary bg-primary/10 hover:bg-red-100 text-primary text-sm shadow-sm transition-colors"
+                  title="Clear search"
+                >
+                  {search}
+                  <div className="bg-red-500 w-5 h-5 absolute -top-2 -right-2 text-white rounded-full flex justify-center items-center">
+                    <X className="w-4 h-4" />
+                  </div>
+                </button>
+              </>
             )}
-          </button>
+            {/* Search Icon */}
+            <button
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              className={`relative p-2 rounded-full transition-colors ${
+                isSearchOpen
+                  ? "bg-primary/10 text-primary"
+                  : "hover:bg-gray-100 text-gray-700 hover:text-black"
+              }`}
+            >
+              <Search className="w-6 h-6" />
+            </button>
+
+            {/* Cart Icon */}
+            <button onClick={() => setIsCartOpen(true)} className="relative">
+              <UtensilsCrossed className="w-6 h-6 text-gray-700 hover:text-black" />
+              {activeOrders.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                  {activeOrders.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Search Bar Dropdown */}
+          {isSearchOpen && (
+            <div className="absolute top-full left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+              <div className="p-4">
+                <div className="relative flex items-center">
+                  <Search className="absolute left-3 text-gray-400" size={20} />
+                  <input
+                    type="text"
+                    placeholder="Search for food items..."
+                    value={search || ""}
+                    onChange={(e) => onSearch(e.target.value)}
+                    className="w-full rounded-3xl pl-11 pr-20 py-3 bg-gray-50 border border-gray-300 text-gray-700 placeholder-gray-400 shadow-sm outline-none transition-all duration-200 focus:bg-white focus:border-primary"
+                    autoFocus
+                  />
+                  {/* Clear typed search (small X icon) */}
+                  {(search || "").trim() && (
+                    <button
+                      onClick={() => onSearch("")}
+                      className="absolute right-10 text-gray-400 hover:text-red-500 transition-colors"
+                      title="Clear search"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                  {/* Close search dropdown button */}
+                  <button
+                    onClick={() => setIsSearchOpen(false)}
+                    className="absolute right-3 text-gray-500 hover:text-red-500 transition-colors"
+                    title="Close search"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </header>
 
         {/* Sidebar overlay with backdrop blur */}
