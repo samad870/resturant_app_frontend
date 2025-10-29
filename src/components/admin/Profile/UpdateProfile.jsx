@@ -1,600 +1,644 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import config from "../../../config";
+// import React, { useState, useEffect, useCallback } from "react";
+// // eslint-disable-next-line no-unused-vars
+// import { motion, AnimatePresence } from "framer-motion";
+// import config from "../../../config";
+// import {
+//   CheckCircleIcon,
+//   ExclamationTriangleIcon,
+//   XCircleIcon,
+// } from "@heroicons/react/24/solid";
 
-const UpdateProfile = () => {
-  const [formData, setFormData] = useState({
-    category: "",
-    tableNumbers: "",
-    phoneNumber: "",
-    publicId: "",
-  });
+// // --- Reusable Components ---
 
-  const [file, setFile] = useState(null);
-  const [fileError, setFileError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [restaurantId, setRestaurantId] = useState("");
-  const [restaurantInfo, setRestaurantInfo] = useState(null);
-  const [notification, setNotification] = useState({ show: false, message: "", type: "" });
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+// // Wrapper for each form section card
+// const FormCard = ({ title, icon, children, customIndex }) => (
+//   <motion.div
+//     className="bg-white rounded-2xl shadow-lg border border-gray-200"
+//     variants={{
+//       hidden: { opacity: 0, y: 20 },
+//       visible: (i) => ({
+//         opacity: 1,
+//         y: 0,
+//         transition: { delay: i * 0.05, duration: 0.4, ease: "easeOut" },
+//       }),
+//     }}
+//     initial="hidden"
+//     animate="visible"
+//     custom={customIndex}
+//   >
+//     <div className="p-6 md:p-8">
+//       <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+//         <span className="text-orange-500">{icon}</span>
+//         {title}
+//       </h3>
+//       <div className="space-y-6">{children}</div>
+//     </div>
+//   </motion.div>
+// );
 
-  const [categorySuggestions, setCategorySuggestions] = useState(() => {
-    const saved = localStorage.getItem("restaurantCategories");
-    try {
-      return saved ? JSON.parse(saved) : [];
-    } catch (error) {
-      console.error("Error parsing categories from localStorage:", error);
-      return [];
-    }
-  });
+// // Read-only field
+// const DisabledFormField = ({ label, value }) => (
+//   <div>
+//     <label className="block text-sm font-medium text-gray-700 mb-1.5">
+//       {label}
+//     </label>
+//     <div className="flex items-center w-full bg-gray-100 border border-gray-200 rounded-xl p-4 cursor-not-allowed">
+//       <span className="text-gray-800 font-medium truncate">{value || "N/A"}</span>
+//     </div>
+//   </div>
+// );
 
-  const [token] = useState(() => localStorage.getItem("token") || "");
+// // Standard editable form field
+// const FormField = ({
+//   label,
+//   name,
+//   value,
+//   onChange,
+//   placeholder,
+//   type = "text",
+//   min,
+// }) => (
+//   <div>
+//     <label className="block text-sm font-medium text-gray-700 mb-1.5">
+//       {label}
+//     </label>
+//     <input
+//       type={type}
+//       name={name}
+//       value={value}
+//       onChange={onChange}
+//       min={min}
+//       className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+//       placeholder={placeholder}
+//     />
+//   </div>
+// );
 
-  // Fetch restaurant details
-  useEffect(() => {
-    const fetchDetails = async () => {
-      try {
-        const res = await fetch(
-          `${config.BASE_URL}/api/restaurant/details`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const data = await res.json();
-        console.log("Fetched restaurant details:", data);
+// // --- Motion Variants ---
+// const chipVariant = {
+//   hidden: { opacity: 0, scale: 0.5 },
+//   visible: { opacity: 1, scale: 1 },
+//   exit: { opacity: 0, scale: 0.5, transition: { duration: 0.2 } },
+// };
 
-        if (res.ok && data.restaurant) {
-          const r = data.restaurant;
-          setRestaurantId(r._id);
-          setRestaurantInfo(r);
-          setFormData({
-            category: r.categories?.[0] || "",
-            tableNumbers: r.tableNumbers || "",
-            phoneNumber: r.phoneNumber || "",
-            publicId: r.logo?.public_id || "",
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching restaurant details:", err);
-      }
-    };
+// const modalOverlayVariant = {
+//   hidden: { opacity: 0 },
+//   visible: { opacity: 1 },
+//   exit: { opacity: 0 },
+// };
 
-    if (token) fetchDetails();
-  }, [token]);
+// const modalContentVariant = {
+//   hidden: { opacity: 0, scale: 0.8 },
+//   visible: { opacity: 1, scale: 1 },
+//   exit: { opacity: 0, scale: 0.8 },
+// };
 
-  // Show notification function
-  const showNotification = (message, type = "success") => {
-    setNotification({ show: true, message, type });
-  };
+// // --- Main Component ---
+// const UpdateProfile = () => {
+//   const [formData, setFormData] = useState({
+//     tableNumbers: "",
+//     phoneNumber: "",
+//     address: "",
+//     gstNumber: "",
+//     gstEnabled: false,
+//     gstRate: 0,
+//     publicId: "",
+//   });
 
-  const closeNotification = () => {
-    setNotification({ show: false, message: "", type: "" });
-  };
+//   const [categories, setCategories] = useState([]);
+//   const [currentCategoryInput, setCurrentCategoryInput] = useState("");
+//   const [file, setFile] = useState(null);
+//   const [fileError, setFileError] = useState("");
+  
+//   const [isLoading, setIsLoading] = useState(true); // For initial page load
+//   const [isSubmitting, setIsSubmitting] = useState(false); // For form submission
+//   const [error, setError] = useState(null); // For initial page load error
 
-  // Handle input changes
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+//   const [restaurantInfo, setRestaurantInfo] = useState(null);
+//   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
-    if (name === "phoneNumber") {
-      const onlyDigits = value.replace(/\D/g, "");
-      if (onlyDigits.length <= 10) {
-        setFormData((prev) => ({
-          ...prev,
-          [name]: onlyDigits,
-        }));
-      }
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
-  };
+//   const [categorySuggestions, setCategorySuggestions] = useState(() => {
+//     try {
+//       const saved = localStorage.getItem("restaurantCategories");
+//       return saved ? JSON.parse(saved) : [];
+//     } catch (e) {
+//       console.error("Error parsing categories from localStorage:", e);
+//       return [];
+//     }
+//   });
 
-  // ✅ File handler with 300KB size limit
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    
-    setFileError("");
-    setFile(null);
+//   const [token] = useState(() => localStorage.getItem("token") || "");
 
-    if (!selectedFile) return;
+//   // Fetch restaurant details
+//   useEffect(() => {
+//     const fetchDetails = async () => {
+//       if (!token) {
+//         setError("No authentication token found. Please log in.");
+//         setIsLoading(false);
+//         return;
+//       }
+//       try {
+//         setIsLoading(true);
+//         setError(null);
+//         const res = await fetch(`${config.BASE_URL}/api/restaurant/admin`, {
+//           headers: {
+//             Authorization: `Bearer ${token}`,
+//             "Cache-Control": "no-cache",
+//             Pragma: "no-cache",
+//           },
+//         });
+// console.log(res)
+//         if (!res.ok) {
+//            const errData = await res.json();
+//            throw new Error(errData.message || `Failed to fetch data (Status: ${res.status})`);
+//         }
+        
+//         const data = await res.json();
+        
+//         if (data.restaurant) {
+//           const r = data.restaurant;
+//           setRestaurantInfo(r);
+//           setFormData({
+//             tableNumbers: r.tableNumbers || "",
+//             phoneNumber: r.phoneNumber || "",
+//             address: r.address || "",
+//             gstEnabled: r.gstEnabled || false,
+//             gstNumber: r.gstNumber || "",
+//             gstRate: r.gstRate || 0,
+//             publicId: r.logo?.public_id || "",
+//           });
+//           setCategories(r.categories || []);
+//         } else {
+//             throw new Error("Restaurant data not found in response.");
+//         }
+//       } catch (err) {
+//         console.error("Error fetching restaurant details:", err);
+//         setError(err.message);
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
 
-    // ✅ 300KB file size limit
-    const fileSizeInKB = selectedFile.size / 1024;
-    if (fileSizeInKB > 300) {
-      setFileError(`File size too large: ${fileSizeInKB.toFixed(2)} KB. Maximum allowed: 300KB`);
-      e.target.value = "";
-      return;
-    }
+//     fetchDetails();
+//   }, [token]);
 
-    // All image types accepted
-    const allowedTypes = [
-      'image/jpeg', 
-      'image/jpg', 
-      'image/png', 
-      'image/gif', 
-      'image/webp',
-      'image/avif'
-    ];
-    
-    if (!allowedTypes.includes(selectedFile.type)) {
-      setFileError("Please select a valid image file (JPEG, JPG, PNG, GIF, WEBP, AVIF)");
-      e.target.value = "";
-      return;
-    }
+//   // --- Core Handlers ---
 
-    setFile(selectedFile);
-  };
+//   const showNotification = (message, type = "success") => {
+//     setNotification({ show: true, message, type });
+//   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+//   const closeNotification = () => {
+//     setNotification({ show: false, message: "", type: "" });
+//   };
 
-    if (!token) {
-      showNotification("No token found. Please login first", "error");
-      return;
-    }
+//   const handleChange = (e) => {
+//     const { name, value } = e.target;
+//     let processedValue = value;
 
-    // Check if file exists and has no errors
-    if (fileError) {
-      showNotification(fileError, "error");
-      return;
-    }
+//     if (name === "phoneNumber") {
+//       processedValue = value.replace(/\D/g, "");
+//       if (processedValue.length > 10) {
+//         processedValue = processedValue.slice(0, 10);
+//       }
+//     } else if (name === "gstRate") {
+//       processedValue = value.replace(/[^0-9.]/g, "").replace(/(\..*?)\..*/g, "$1");
+//     }
 
-    const newCategory = formData.category.trim();
-    if (newCategory && !categorySuggestions.includes(newCategory)) {
-      const updatedSuggestions = [...categorySuggestions, newCategory];
-      setCategorySuggestions(updatedSuggestions);
-      localStorage.setItem("restaurantCategories", JSON.stringify(updatedSuggestions));
-    }
+//     setFormData((prev) => ({ ...prev, [name]: processedValue }));
+//   };
 
-    try {
-      setLoading(true);
+//   const handleGstToggle = (e) => {
+//     const isEnabled = e.target.checked;
+//     setFormData((prev) => ({
+//       ...prev,
+//       gstEnabled: isEnabled,
+//       gstNumber: isEnabled ? prev.gstNumber : "",
+//       gstRate: isEnabled ? prev.gstRate : 0,
+//     }));
+//   };
 
-      const formDataToUpload = new FormData();
-      formDataToUpload.append("category", formData.category);
-      formDataToUpload.append("tableNumbers", formData.tableNumbers);
-      formDataToUpload.append("phoneNumber", formData.phoneNumber);
+//   const handleFileChange = (e) => {
+//     const selectedFile = e.target.files[0];
+//     setFileError("");
+//     setFile(null);
+//     if (!selectedFile) return;
 
-      if (file) {
-        formDataToUpload.append("file", file);
-      }
+//     const fileSizeInKB = selectedFile.size / 1024;
+//     if (fileSizeInKB > 300) {
+//       setFileError(`File size too large: ${fileSizeInKB.toFixed(2)} KB. Max: 300KB`);
+//       e.target.value = "";
+//       return;
+//     }
+//     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+//     if (!allowedTypes.includes(selectedFile.type)) {
+//       setFileError("Please select a valid image file (JPEG, PNG, etc.)");
+//       e.target.value = "";
+//       return;
+//     }
+//     setFile(selectedFile);
+//   };
 
-      console.log("Sending update request...", {
-        category: formData.category,
-        tableNumbers: formData.tableNumbers,
-        phoneNumber: formData.phoneNumber,
-        hasFile: !!file
-      });
+//   // --- Category Handlers ---
 
-      // ✅ UPDATED: Using PUT with FormData for restaurant update
-      const res = await fetch(`${config.BASE_URL}/api/restaurant/`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          // No Content-Type header for FormData - browser sets it automatically
-        },
-        body: formDataToUpload,
-      });
+//   const handleCategoryKeyDown = (e) => {
+//     if (e.key === "Enter" || e.key === " ") {
+//       e.preventDefault();
+//       const value = currentCategoryInput.trim();
+//       if (!value) return;
 
-      const result = await res.json();
-      console.log("Update response:", result);
+//       const capitalizedValue = value.charAt(0).toUpperCase() + value.slice(1);
 
-      if (!res.ok) {
-        throw new Error(result.message || `Failed to update restaurant: ${res.status} ${res.statusText}`);
-      }
+//       if (!categories.includes(capitalizedValue)) {
+//         setCategories((prev) => [...prev, capitalizedValue]);
+        
+//         if (!categorySuggestions.includes(capitalizedValue)) {
+//           const updatedSuggestions = [...categorySuggestions, capitalizedValue];
+//           setCategorySuggestions(updatedSuggestions);
+//           localStorage.setItem("restaurantCategories", JSON.stringify(updatedSuggestions));
+//         }
+//       }
+//       setCurrentCategoryInput("");
+//     }
+//   };
 
-      showNotification("Restaurant updated successfully!", "success");
-      setRestaurantInfo(result.restaurant);
-      setFile(null);
-      setFileError("");
+//   const handleRemoveCategory = useCallback((categoryToRemove) => {
+//     setCategories((prev) => prev.filter((cat) => cat !== categoryToRemove));
+//   }, []);
 
-    } catch (error) {
-      console.error("Update error:", error);
-      showNotification(error.message, "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+//   // --- Form Submission ---
 
-  // Custom delete confirmation functions
-  const confirmDelete = () => {
-    setShowDeleteConfirm(true);
-  };
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     if (!token) {
+//       showNotification("No token found. Please login first", "error");
+//       return;
+//     }
+//     if (fileError) {
+//       showNotification(fileError, "error");
+//       return;
+//     }
 
-  const cancelDelete = () => {
-    setShowDeleteConfirm(false);
-  };
+//     try {
+//       setIsSubmitting(true);
+//       const formDataToUpload = new FormData();
 
-  const deleteRestaurant = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(
-        `${config.BASE_URL}/api/restaurant/`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+//       // Append all form data fields
+//       Object.keys(formData).forEach(key => {
+//          formDataToUpload.append(key, formData[key]);
+//       });
 
-      const results = await res.json();
-      if (!res.ok)
-        throw new Error(results.message || "Failed to delete restaurant");
+//       if (file) {
+//         formDataToUpload.append("file", file);
+//       }
 
-      showNotification("Restaurant deleted successfully!", "success");
-      setShowDeleteConfirm(false);
-      
-    } catch (error) {
-      showNotification(error.message, "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+//       // Append categories array
+//       categories.forEach((category) => {
+//         formDataToUpload.append("categories", category);
+//       });
+//       if (categories.length === 0) {
+//         formDataToUpload.append("categories", ""); // To clear array on backend
+//       }
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-8 relative">
-      {/* Big Modal Notification */}
-      <AnimatePresence>
-        {notification.show && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-              onClick={closeNotification}
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ 
-                  type: "spring", 
-                  damping: 25, 
-                  stiffness: 300,
-                  duration: 0.3
-                }}
-                className={`relative rounded-3xl shadow-2xl p-8 w-full max-w-sm mx-auto ${
-                  notification.type === "success" 
-                    ? "bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200" 
-                    : "bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200"
-                }`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="text-center">
-                  <div className={`w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-6 ${
-                    notification.type === "success" 
-                      ? "bg-green-100 text-green-600 border-2 border-green-200" 
-                      : "bg-red-100 text-red-600 border-2 border-red-200"
-                  }`}>
-                    {notification.type === "success" ? (
-                      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    ) : (
-                      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    )}
-                  </div>
+//       const res = await fetch(`${config.BASE_URL}/api/restaurant/`, {
+//         method: "PUT",
+//         headers: { Authorization: `Bearer ${token}` },
+//         body: formDataToUpload,
+//       });
 
-                  <h3 className={`text-3xl font-bold mb-4 ${
-                    notification.type === "success" ? "text-green-900" : "text-red-900"
-                  }`}>
-                    {notification.type === "success" ? "Success!" : "Oops!"}
-                  </h3>
+//       const result = await res.json();
+//       if (!res.ok) throw new Error(result.message || "Failed to update");
 
-                  <p className={`text-xl mb-8 leading-relaxed ${
-                    notification.type === "success" ? "text-green-700" : "text-red-700"
-                  }`}>
-                    {notification.message}
-                  </p>
+//       showNotification("Restaurant updated successfully!", "success");
+//       setRestaurantInfo(result.restaurant);
+//       setCategories(result.restaurant.categories || []);
+//       setFile(null);
+//       setFileError("");
+//       const fileInput = document.getElementById("logo-upload");
+//       if (fileInput) fileInput.value = "";
+//     } catch (err) {
+//       console.error("Update error:", err);
+//       showNotification(err.message, "error");
+//     } finally {
+//       setIsSubmitting(false);
+//     }
+//   };
 
-                  <motion.button
-                    onClick={closeNotification}
-                    whileTap={{ scale: 0.95 }}
-                    whileHover={{ scale: 1.02 }}
-                    className={`w-full py-5 rounded-2xl text-xl font-bold shadow-lg transition-all ${
-                      notification.type === "success" 
-                        ? "bg-green-500 text-white hover:bg-green-600 shadow-green-200" 
-                        : "bg-red-500 text-white hover:bg-red-600 shadow-red-200"
-                    }`}
-                  >
-                    Done
-                  </motion.button>
-                </div>
-              </motion.div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+//   // --- Render Logic ---
 
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {showDeleteConfirm && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-              onClick={cancelDelete}
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ 
-                  type: "spring", 
-                  damping: 25, 
-                  stiffness: 300 
-                }}
-                className="relative rounded-3xl shadow-2xl p-8 w-full max-w-md mx-auto bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="text-center">
-                  {/* Warning Icon */}
-                  <div className="w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-6 bg-red-100 text-red-600 border-2 border-red-200">
-                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                  </div>
+//   if (isLoading) {
+//     return (
+//       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+//         <div className="flex flex-col items-center gap-3">
+//           <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+//           <p className="text-gray-600">Loading settings...</p>
+//         </div>
+//       </div>
+//     );
+//   }
 
-                  {/* Title */}
-                  <h3 className="text-3xl font-bold text-red-900 mb-4">
-                    Confirm Deletion
-                  </h3>
+//   if (error) {
+//      return (
+//         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+//           <div className="bg-white p-8 rounded-2xl shadow-lg border border-red-200 text-center">
+//              <ExclamationTriangleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
+//              <h2 className="text-2xl font-bold text-gray-900 mb-3">Error Loading Settings</h2>
+//              <p className="text-gray-700">{error}</p>
+//           </div>
+//         </div>
+//      );
+//   }
 
-                  {/* Warning Message */}
-                  <div className="bg-red-100 border-2 border-red-200 rounded-2xl p-4 mb-6">
-                    <p className="text-red-800 font-semibold text-lg">
-                      ⚠️ This action cannot be undone!
-                    </p>
-                    <p className="text-red-700 mt-2">
-                      All your restaurant data, menu items, and settings will be permanently deleted.
-                    </p>
-                  </div>
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-8 md:py-12">
+//       {/* Notifications Modal */}
+//       <AnimatePresence>
+//         {notification.show && (
+//           <motion.div
+//             variants={modalOverlayVariant}
+//             initial="hidden"
+//             animate="visible"
+//             exit="exit"
+//             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+//             onClick={closeNotification}
+//           >
+//             <motion.div
+//               variants={modalContentVariant}
+//               className={`relative rounded-3xl shadow-2xl p-8 w-full max-w-sm mx-auto ${
+//                 notification.type === "success"
+//                   ? "bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200"
+//                   : "bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200"
+//               }`}
+//               onClick={(e) => e.stopPropagation()}
+//             >
+//               <div className="text-center">
+//                 {notification.type === "success" ? (
+//                   <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
+//                 ) : (
+//                   <XCircleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
+//                 )}
+//                 <p className="text-lg font-medium text-gray-800">
+//                   {notification.message}
+//                 </p>
+//                 <button
+//                   onClick={closeNotification}
+//                   className={`mt-6 w-full text-white py-3 px-8 rounded-xl text-lg font-semibold shadow-sm transition-colors ${
+//                      notification.type === "success" 
+//                      ? "bg-green-500 hover:bg-green-600"
+//                      : "bg-red-500 hover:bg-red-600"
+//                   }`}
+//                 >
+//                   Done
+//                 </button>
+//               </div>
+//             </motion.div>
+//           </motion.div>
+//         )}
+//       </AnimatePresence>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-4">
-                    <motion.button
-                      onClick={cancelDelete}
-                      whileTap={{ scale: 0.95 }}
-                      whileHover={{ scale: 1.02 }}
-                      className="flex-1 py-4 bg-gray-500 text-white rounded-2xl font-bold shadow-lg hover:bg-gray-600 transition-colors"
-                    >
-                      Cancel
-                    </motion.button>
-                    
-                    <motion.button
-                      onClick={deleteRestaurant}
-                      disabled={loading}
-                      whileTap={{ scale: 0.95 }}
-                      whileHover={{ scale: 1.02 }}
-                      className="flex-1 py-4 bg-red-500 text-white rounded-2xl font-bold shadow-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {loading ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Deleting...
-                        </>
-                      ) : (
-                        <>
-                          <span>🗑️</span>
-                          Yes, Delete
-                        </>
-                      )}
-                    </motion.button>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+//       {/* Main Content */}
+//       <div className="w-full max-w-4xl mx-auto space-y-6">
+//         {/* Page Header */}
+//         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+//           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 text-center">
+//             Restaurant Settings
+//           </h1>
+//           <p className="text-lg text-gray-600 text-center mt-2">
+//             Update your restaurant's profile and settings.
+//           </p>
+//         </motion.div>
 
-      {restaurantInfo && (
-        <motion.div 
-          className="w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <span className="text-orange-500">🏨</span>
-            Restaurant Information
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              {restaurantInfo.name && (
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                  <p className="text-sm font-medium text-gray-500 mb-1">Name</p>
-                  <p className="text-lg font-semibold text-gray-900">{restaurantInfo.name}</p>
-                </div>
-              )}
-              
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <p className="text-sm font-medium text-gray-500">Category</p>
-                </div>
-                <p className="text-gray-900 font-medium text-lg">
-                  {restaurantInfo.categories
-                    ? Array.isArray(restaurantInfo.categories) 
-                      ? restaurantInfo.categories.join(", ")
-                      : restaurantInfo.categories
-                    : "Not specified"}
-                </p>
-              </div>
-            </div>
+//         {/* Form sections */}
+//         <motion.form onSubmit={handleSubmit} className="space-y-6">
+//           <FormCard
+//             title="Business Details (Uneditable)"
+//             icon="🔒"
+//             customIndex={0}
+//           >
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//               <DisabledFormField label="Owner Name" value={restaurantInfo?.name} />
+//               <DisabledFormField
+//                 label="Restaurant Name"
+//                 value={restaurantInfo?.restaurantName}
+//               />
+//               <DisabledFormField
+//                 label="Client Domain"
+//                 value={restaurantInfo?.domain}
+//               />
+//             </div>
+//           </FormCard>
 
-            <div className="space-y-4">
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-sm font-medium text-gray-500 mb-1">Total Tables</p>
-                <p className="text-lg font-semibold text-gray-900">{restaurantInfo.tableNumbers || "N/A"}</p>
-              </div>
-              
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-sm font-medium text-gray-500 mb-1">Contact Number</p>
-                <p className="text-gray-900 font-medium">{restaurantInfo.phoneNumber || "N/A"}</p>
-              </div>
-            </div>
-          </div>
+//           <FormCard title="Core Profile" icon="✏️" customIndex={1}>
+//             <FormField
+//               label="Address"
+//               name="address"
+//               value={formData.address}
+//               onChange={handleChange}
+//               placeholder="e.g. 123 Main St, New Delhi"
+//             />
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//               <FormField
+//                 label="Phone Number"
+//                 name="phoneNumber"
+//                 type="tel"
+//                 value={formData.phoneNumber}
+//                 onChange={handleChange}
+//                 placeholder="e.g. 9876543210"
+//               />
+//               <FormField
+//                 label="Total Tables"
+//                 name="tableNumbers"
+//                 type="number"
+//                 min="1"
+//                 value={formData.tableNumbers}
+//                 onChange={handleChange}
+//                 placeholder="e.g. 25"
+//               />
+//             </div>
 
-          {restaurantInfo.logo?.url && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-sm font-medium text-gray-500 mb-3">Current Logo</p>
-              <div className="flex items-center gap-4">
-                <img
-                  src={restaurantInfo.logo.url}
-                  alt="Restaurant Logo"
-                  className="h-16 w-16 rounded-xl border border-gray-200 object-cover"
-                />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Logo Preview</p>
-                  <p className="text-xs text-gray-500">Current restaurant logo</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      )}
+//             {/* Category Input Field */}
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700 mb-1.5">
+//                 Categories
+//               </label>
+//               <div className="flex flex-wrap items-center gap-2 w-full border border-gray-300 rounded-xl p-2.5 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500 transition-all">
+//                 <AnimatePresence>
+//                   {categories.map((category) => (
+//                     <motion.span
+//                       key={category}
+//                       {...chipVariant}
+//                       className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1.5 rounded-full"
+//                     >
+//                       {category}
+//                       <button
+//                         type="button"
+//                         onClick={() => handleRemoveCategory(category)}
+//                         className="text-orange-600 hover:text-orange-800"
+//                         aria-label={`Remove ${category}`}
+//                       >
+//                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+//                         </svg>
+//                       </button>
+//                     </motion.span>
+//                   ))}
+//                 </AnimatePresence>
+//                 <input
+//                   type="text"
+//                   value={currentCategoryInput}
+//                   onChange={(e) => setCurrentCategoryInput(e.target.value)}
+//                   onKeyDown={handleCategoryKeyDown}
+//                   list="category-suggestions"
+//                   className="flex-1 min-w-[150px] border-none outline-none ring-0 focus:ring-0 p-1.5 bg-transparent"
+//                   placeholder="Type a category and press Space..."
+//                 />
+//               </div>
+//               <datalist id="category-suggestions">
+//                 {categorySuggestions.map((cat, idx) => (
+//                   <option key={idx} value={cat} />
+//                 ))}
+//               </datalist>
+//               <p className="text-xs text-gray-500 mt-1.5">
+//                 Press Space or Enter to add a new category.
+//               </p>
+//             </div>
+//           </FormCard>
 
-      <motion.form
-        onSubmit={handleSubmit}
-        className="w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-gray-200 p-8 space-y-6"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-      >
-        <h2 className="text-2xl font-bold text-gray-900 text-center flex items-center justify-center gap-2">
-          <span className="text-orange-500">⚙️</span>
-          Update Restaurant Profile
-        </h2>
+//           <FormCard title="Financials" icon="💳" customIndex={2}>
+//             <div className="space-y-4 rounded-xl border border-gray-200 p-4 bg-gray-50">
+//               <div className="flex items-center justify-between">
+//                 <label
+//                   htmlFor="gst-toggle"
+//                   className="text-gray-700 font-semibold"
+//                 >
+//                   Enable GST
+//                 </label>
+//                 <label className="relative inline-flex items-center cursor-pointer">
+//                   <input
+//                     type="checkbox"
+//                     id="gst-toggle"
+//                     className="sr-only peer"
+//                     checked={formData.gstEnabled}
+//                     onChange={handleGstToggle}
+//                   />
+//                   <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-orange-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+//                 </label>
+//               </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-gray-700 font-semibold mb-2">Category</label>
-            <input
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
-              list="category-suggestions"
-              className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-              placeholder="e.g. Indian, Chinese"
-            />
-            <datalist id="category-suggestions">
-              {categorySuggestions.map((cat, idx) => (
-                <option key={idx} value={cat} />
-              ))}
-            </datalist>
-            <p className="text-xs text-gray-500 mt-1">Select from suggestions or type new</p>
-          </div>
+//               <AnimatePresence>
+//                 {formData.gstEnabled && (
+//                   <motion.div
+//                     initial={{ opacity: 0, height: 0, marginTop: 0 }}
+//                     animate={{ opacity: 1, height: "auto", marginTop: "1rem" }}
+//                     exit={{ opacity: 0, height: 0, marginTop: 0 }}
+//                     transition={{ duration: 0.3 }}
+//                     className="space-y-4 overflow-hidden"
+//                   >
+//                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//                       <FormField
+//                         label="GST Number"
+//                         name="gstNumber"
+//                         value={formData.gstNumber}
+//                         onChange={handleChange}
+//                         placeholder="e.g. 22AAAAA0000A1Z5"
+//                       />
+//                       <FormField
+//                         label="GST Rate (%)"
+//                         name="gstRate"
+//                         type="text" // Keep as text to allow decimal
+//                         value={formData.gstRate}
+//                         onChange={handleChange}
+//                         placeholder="e.g. 5"
+//                       />
+//                     </div>
+//                   </motion.div>
+//                 )}
+//               </AnimatePresence>
+//             </div>
+//           </FormCard>
 
-          <div>
-            <label className="block text-gray-700 font-semibold mb-2">Table Numbers</label>
-            <input
-              type="number"
-              name="tableNumbers"
-              value={formData.tableNumbers}
-              onChange={handleChange}
-              required
-              min="1"
-              className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-              placeholder="e.g. 25"
-            />
-          </div>
-        </div>
+//           <FormCard title="Branding" icon="🖼️" customIndex={3}>
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700 mb-1.5">
+//                 Restaurant Logo
+//               </label>
+//               <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-orange-400 transition-colors bg-gray-50">
+//                 <input
+//                   type="file"
+//                   onChange={handleFileChange}
+//                   className="hidden"
+//                   id="logo-upload"
+//                   accept=".jpeg,.jpg,.png,.gif,.webp,.avif,image/*"
+//                 />
+//                 <label
+//                   htmlFor="logo-upload"
+//                   className="cursor-pointer"
+//                 >
+//                   <div className="flex flex-col items-center justify-center gap-2">
+//                     <span className="text-3xl">📁</span>
+//                     <div>
+//                       <p className="text-gray-700 font-medium">
+//                         {file ? file.name : "Click to upload logo"}
+//                       </p>
+//                       <p className="text-sm text-gray-500">
+//                         JPEG, JPG, PNG up to 300KB
+//                       </p>
+//                     </div>
+//                   </div>
+//                 </label>
+//               </div>
+//               {file && !fileError && (
+//                 <p className="text-sm text-green-600 mt-2 flex items-center gap-2">
+//                   <span>✅</span> Selected: {file.name} (
+//                   {(file.size / 1024).toFixed(2)} KB)
+//                 </p>
+//               )}
+//               {fileError && (
+//                 <p className="text-sm text-red-600 mt-2 flex items-center gap-2">
+//                   <span>❌</span> {fileError}
+//                 </p>
+//               )}
+//             </div>
+//           </FormCard>
 
-        <div>
-          <label className="block text-gray-700 font-semibold mb-2">Phone Number</label>
-          <input
-            type="tel"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-            required
-            className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-            placeholder="e.g. 9876543210"
-          />
-        </div>
+//           {/* Form Actions */}
+//           <motion.div
+//             className="flex justify-end gap-4"
+//             variants={{
+//               hidden: { opacity: 0, y: 20 },
+//               visible: (i) => ({
+//                 opacity: 1,
+//                 y: 0,
+//                 transition: { delay: i * 0.05, duration: 0.4, ease: "easeOut" },
+//               }),
+//             }}
+//             initial="hidden"
+//             animate="visible"
+//             custom={4}
+//           >
+//             <motion.button
+//               type="submit"
+//               disabled={isSubmitting || !!fileError}
+//               whileTap={{ scale: 0.95 }}
+//               className="bg-orange-500 text-white py-3 px-8 rounded-xl text-lg font-semibold shadow-sm hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[200px]"
+//             >
+//               {isSubmitting ? (
+//                 <>
+//                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+//                   Updating...
+//                 </>
+//               ) : (
+//                 <>
+//                   <span>💾</span>
+//                   Update Restaurant
+//                 </>
+//               )}
+//             </motion.button>
+//           </motion.div>
+//         </motion.form>
+//       </div>
+//     </div>
+//   );
+// };
 
-        {/* File Upload Section */}
-        <div>
-          <label className="block text-gray-700 font-semibold mb-2">Restaurant Logo</label>
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-orange-400 transition-colors bg-gray-50">
-            <input
-              type="file"
-              onChange={handleFileChange}
-              className="hidden"
-              id="logo-upload"
-              accept=".jpeg,.jpg,.png,.gif,.webp,.avif,image/*"
-            />
-            <label htmlFor="logo-upload" className="cursor-pointer">
-              <div className="flex flex-col items-center justify-center gap-2">
-                <span className="text-2xl">📁</span>
-                <div>
-                  <p className="text-gray-700 font-medium">
-                    {file ? file.name : "Click to upload logo"}
-                  </p>
-                  {/* ✅ Updated to show 300KB limit */}
-                  <p className="text-sm text-gray-500">JPEG, JPG, PNG up to 300KB</p>
-                </div>
-              </div>
-            </label>
-          </div>
-          
-          {file && !fileError && (
-            <p className="text-sm text-green-600 mt-2 flex items-center gap-2">
-              <span>✅</span> Selected: {file.name} ({(file.size / 1024).toFixed(2)} KB)
-            </p>
-          )}
-          
-          {fileError && (
-            <p className="text-sm text-red-600 mt-2 flex items-center gap-2">
-              <span>❌</span> {fileError}
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 pt-4">
-          <motion.button
-            type="submit"
-            disabled={loading || fileError}
-            whileTap={{ scale: 0.95 }}
-            className="flex-1 bg-orange-500 text-white py-4 rounded-xl text-lg font-semibold shadow-sm hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Updating...
-              </>
-            ) : (
-              <>
-                <span>💾</span>
-                Update Restaurant
-              </>
-            )}
-          </motion.button>
-
-          <motion.button
-            type="button"
-            onClick={confirmDelete}
-            whileTap={{ scale: 0.95 }}
-            className="px-8 py-4 border border-red-300 text-red-600 rounded-xl font-semibold hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
-          >
-            <span>🗑️</span>
-            Delete Restaurant
-          </motion.button>
-        </div>
-      </motion.form>
-    </div>
-  );
-};
-
-export default UpdateProfile;
+// export default UpdateProfile;

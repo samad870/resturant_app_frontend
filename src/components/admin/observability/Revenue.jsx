@@ -1,5 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
 "use client"
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
@@ -8,6 +10,22 @@ import config from "../../../config"
 
 const chartConfig = {
   revenue: { label: "Revenue", color: "#f97316" },
+}
+
+// Helper function to format currency
+const formatCurrency = (amount) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount)
+
+// Helper function to format Y-axis (e.g., 10000 -> ₹10k)
+const formatYAxis = (value) => {
+  if (value >= 1000) {
+    return `₹${value / 1000}k`
+  }
+  return `₹${value}`
 }
 
 export default function RevenueWithDatePicker() {
@@ -24,6 +42,10 @@ export default function RevenueWithDatePicker() {
   const [loading, setLoading] = useState(true)
   const [domain, setDomain] = useState("")
   const [currentFilter, setCurrentFilter] = useState("all")
+  const [xAxisFormat, setXAxisFormat] = useState("day") // 'hour', 'day', 'month'
+  
+  const [chartDomain, setChartDomain] = useState(['auto', 'auto'])
+  
   const dropdownRef = useRef(null)
 
   useEffect(() => {
@@ -41,84 +63,60 @@ export default function RevenueWithDatePicker() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  const fetchAllData = async () => {
-    try {
-      setLoading(true)
-      const token = localStorage.getItem("token")
-      const userDomain = localStorage.getItem("userDomain") || "restaurant"
+  const createDemoData = () => {
+    const demoData = []
+    const now = new Date()
+    let totalRev = 0
+    let totalOrd = 0
 
-      if (!token) {
-        createDemoData()
-        return
-      }
-
-      const params = new URLSearchParams({ domain: userDomain })
-      const url = `${config.BASE_URL}/api/analytics/insights?${params.toString()}`
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+    // Create 30 days of demo data
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(now)
+      date.setDate(now.getDate() - i)
+      const revenue = Math.floor(Math.random() * 2000) + 500
+      demoData.push({
+        date: date, // Pass the raw Date object
+        revenue: revenue,
       })
-
-      if (!response.ok) {
-        createDemoData()
-        return
-      }
-
-      const data = await response.json()
-
-      if (data && data.chartData && Array.isArray(data.chartData)) {
-        const transformedData = data.chartData.map(item => ({
-          date: new Date(item.date),
-          revenue: item.revenue || 0,
-          originalDate: item.date,
-        }))
-
-        setAllChartData(transformedData)
-
-        const totalRev =
-          data.totalRevenue !== undefined
-            ? data.totalRevenue
-            : transformedData.reduce((sum, item) => sum + item.revenue, 0)
-        const totalOrd = data.totalOrders !== undefined ? data.totalOrders : transformedData.length
-
-        setTotalOrders(totalOrd)
-        setTotalRevenue(totalRev)
-        setFilteredOrders(totalOrd)
-        setFilteredRevenue(totalRev)
-
-        setFilteredChartData(
-          transformedData.map(item => ({
-            date: item.date.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            }),
-            revenue: item.revenue,
-          }))
-        )
-      } else {
-        createDemoData()
-      }
-    } catch (error) {
-      createDemoData()
-    } finally {
-      setLoading(false)
+      totalRev += revenue
+      totalOrd += Math.floor(Math.random() * 3) + 1
     }
+
+    setAllChartData(demoData)
+    setTotalOrders(totalOrd)
+    setTotalRevenue(totalRev)
+    
+    // Apply default filter (which will be 'all' initially)
+    filterData("all", "", "", demoData, totalOrd, totalRev)
+    setCurrentFilter("demo")
   }
 
-  const filterData = (range, customFrom = "", customTo = "") => {
-    if (!allChartData.length) return
+  const filterData = (
+    range,
+    customFrom = "",
+    customTo = "",
+    dataToFilter = allChartData, // Allow passing in fresh data
+    allOrders = totalOrders,      // Allow passing in fresh totals
+    allRevenue = totalRevenue     // Allow passing in fresh totals
+  ) => {
+    if (!dataToFilter.length && range !== "all") { // Keep 'all' to set empty domain
+        setFilteredChartData([]);
+        setFilteredOrders(0);
+        setFilteredRevenue(0);
+        setCurrentFilter("nodata");
+        return;
+    }
 
     const now = new Date()
     let startDate, endDate
     let filterType = "all"
+    let daysInRange = 9999
 
     if (customFrom && customTo) {
       startDate = new Date(customFrom)
+      startDate.setHours(0, 0, 0, 0) // Start of day
       endDate = new Date(customTo)
-      endDate.setHours(23, 59, 59, 999)
+      endDate.setHours(23, 59, 59, 999) // End of day
       filterType = "custom"
     } else {
       endDate = new Date(now)
@@ -143,83 +141,169 @@ export default function RevenueWithDatePicker() {
           startDate = new Date(now)
           startDate.setFullYear(now.getFullYear() - 1)
           break
-        default:
-          startDate = new Date(0)
-          endDate = new Date(8640000000000000)
+        default: // 'all'
+          startDate = new Date(0) // The beginning of time
+          endDate = new Date(8640000000000000) // The end of time
       }
-      filterType = "timeRange"
+      filterType = range === "all" ? "all" : "timeRange"
     }
 
-    const filtered = allChartData.filter(item => {
-      const itemTime = new Date(item.originalDate).getTime()
+    if (filterType !== "all") {
+      daysInRange = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    }
+
+    // --- Smart Axis Logic ---
+    if (daysInRange <= 2) {
+      setXAxisFormat("hour")
+    } else if (daysInRange <= 60) {
+      setXAxisFormat("day")
+    } else {
+      setXAxisFormat("month")
+    }
+    // --- End Smart Axis Logic ---
+
+    const filtered = dataToFilter.filter((item) => {
+      const itemTime = item.date.getTime()
       return itemTime >= startDate.getTime() && itemTime <= endDate.getTime()
     })
 
-    const totalRev = filtered.reduce((sum, item) => sum + item.revenue, 0)
-    const totalOrd = filtered.length
+    // --- Set Domain ---
+    if (filterType === "all") {
+        if (filtered.length > 0) {
+            // Use the full range of the available data
+            const firstDate = filtered[0].date.getTime();
+            const lastDate = filtered[filtered.length - 1].date.getTime();
+            setChartDomain([firstDate, lastDate]);
+        } else {
+            setChartDomain(['auto', 'auto']); // Fallback
+        }
+    } else {
+        // Force the domain to the selected filter range
+        setChartDomain([startDate.getTime(), endDate.getTime()]);
+    }
+    // --- End Set Domain ---
 
-    setFilteredChartData(
-      filtered.map(item => ({
-        date: new Date(item.date).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-        revenue: item.revenue,
-      }))
-    )
-    setFilteredOrders(totalOrd)
-    setFilteredRevenue(totalRev)
+    if (filterType === "all") {
+      setFilteredRevenue(allRevenue)
+      setFilteredOrders(allOrders)
+    } else {
+      const totalRev = filtered.reduce((sum, item) => sum + item.revenue, 0)
+      const totalOrd = filtered.length // This might be inaccurate if data isn't 1-to-1 with orders
+      setFilteredRevenue(totalRev)
+      setFilteredOrders(totalOrd)
+    }
+
+    setFilteredChartData(filtered) // Pass the raw filtered data
     setCurrentFilter(filtered.length === 0 ? "nodata" : filterType)
   }
 
-  const createDemoData = () => {
-    const demoData = []
-    const now = new Date()
-    let totalRev = 0
-    let totalOrd = 0
+  const fetchAllData = useCallback(async (currentRange) => {
+    try {
+      setLoading(true)
+      const token = localStorage.getItem("token")
+      const userDomain = localStorage.getItem("userDomain") || "restaurant"
 
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(now)
-      date.setDate(now.getDate() - i)
-      const revenue = Math.floor(Math.random() * 2000) + 500
-      demoData.push({
-        date,
-        revenue,
-        originalDate: date.toISOString(),
+      if (!token) {
+        createDemoData()
+        return
+      }
+
+      const params = new URLSearchParams({
+        domain: userDomain,
+        range: currentRange, // Pass the selected range to the API
       })
-      totalRev += revenue
-      totalOrd += Math.floor(Math.random() * 3) + 1
-    }
+      const url = `${config.BASE_URL}/api/analytics/insights?${params.toString()}`
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if (!response.ok) {
+        createDemoData()
+        return
+      }
 
-    setAllChartData(demoData)
-    setFilteredChartData(
-      demoData.map(item => ({
-        date: item.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        revenue: item.revenue,
-      }))
-    )
-    setTotalOrders(totalOrd)
-    setTotalRevenue(totalRev)
-    setFilteredOrders(totalOrd)
-    setFilteredRevenue(totalRev)
-    setCurrentFilter("demo")
-  }
+      const data = await response.json()
+
+      if (data && data.chartData && Array.isArray(data.chartData) && data.chartData.length > 0) {
+        
+        // ✅✅✅ THIS IS THE FIX ✅✅✅
+        // Robust date parsing to ensure UTC time is handled correctly
+        const transformedData = data.chartData.map((item) => {
+          let dateString = item.date;
+
+          if (typeof dateString === 'string') {
+            // 1. Replace any space with 'T'
+            dateString = dateString.replace(' ', 'T');
+          
+            // 2. Add 'Z' if it's a T-string and has no timezone info
+            if (dateString.includes('T') && !dateString.endsWith('Z') && !dateString.includes('+') && !dateString.includes('-')) {
+              dateString += 'Z';
+            }
+          }
+          
+          return {
+            date: new Date(dateString), // This will now parse correctly as UTC
+            revenue: item.revenue || 0,
+          };
+        });
+        // ✅✅✅ END OF FIX ✅✅✅
+
+        setAllChartData(transformedData)
+
+        const totalRev =
+          data.totalRevenue !== undefined
+            ? data.totalRevenue
+            : transformedData.reduce((sum, item) => sum + item.revenue, 0)
+        const totalOrd = data.totalOrders !== undefined ? data.totalOrders : transformedData.length
+
+        setTotalOrders(totalOrd)
+        setTotalRevenue(totalRev)
+        
+        // Apply filter
+        filterData(currentRange, "", "", transformedData, totalOrd, totalRev)
+      } else {
+        // Handle case where API returns empty data
+        setAllChartData([])
+        setTotalOrders(data.totalOrders || 0)
+        setTotalRevenue(data.totalRevenue || 0)
+        filterData(currentRange, "", "", [], data.totalOrders || 0, data.totalRevenue || 0)
+      }
+    } catch (error) {
+      createDemoData()
+    } finally {
+      setLoading(false)
+    }
+  }, []) // No dependencies, will be called with range
+
 
   useEffect(() => {
-    fetchAllData()
-  }, [])
+    // Fetch data on initial load
+    fetchAllData(timeRange)
+  }, [fetchAllData]) // only depends on fetchAllData
 
-  const handleTimeRangeChange = value => {
+  const handleTimeRangeChange = (value) => {
     setTimeRange(value)
     setFromDate("")
     setToDate("")
-    filterData(value)
+    
+    // If data is hourly, we *must* refetch from the API
+    if (value === "1d" || value === "7d") {
+      fetchAllData(value)
+    } else {
+      // Otherwise, we can just filter the existing data
+      filterData(value)
+    }
   }
 
   const handleApply = () => {
     if (fromDate && toDate) {
+      // Custom range *always* filters existing data
       filterData("", fromDate, toDate)
       setShowDatePicker(false)
+      setTimeRange("custom") // Set a custom value for the dropdown
     }
   }
 
@@ -230,13 +314,6 @@ export default function RevenueWithDatePicker() {
     filterData("all")
   }
 
-  const formatCurrency = amount =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount)
-
   const getFilterDescription = () => {
     const rangeLabels = {
       "1d": "Last 1 day",
@@ -244,7 +321,7 @@ export default function RevenueWithDatePicker() {
       "15d": "Last 15 days",
       "30d": "Last 30 days",
       "6m": "Last 6 months",
-      "1y": "Last 1 year"
+      "1y": "Last 1 year",
     }
     if (currentFilter === "timeRange") {
       return rangeLabels[timeRange] || `Last ${timeRange}`
@@ -261,6 +338,23 @@ export default function RevenueWithDatePicker() {
   const getDisplayOrders = () => (currentFilter === "all" ? totalOrders : filteredOrders)
   const getDisplayRevenue = () => (currentFilter === "all" ? totalRevenue : filteredRevenue)
 
+  // Formatter function for the X-axis component
+  const formatXAxisTick = (tick) => {
+    try {
+      const date = new Date(tick) // 'tick' will be a timestamp
+      if (xAxisFormat === "hour") {
+        return date.toLocaleTimeString("en-US", { hour: "numeric", hour12: true }) // e.g., "6 PM"
+      }
+      if (xAxisFormat === "month") {
+        return date.toLocaleDateString("en-US", { month: "short", year: "2-digit" })
+      }
+      // Default to 'day'
+      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    } catch (e) {
+      return tick // Fallback
+    }
+  }
+
   return (
     <Card className="pt-0 relative">
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:gap-4 border-b py-5">
@@ -271,8 +365,14 @@ export default function RevenueWithDatePicker() {
             {loading ? "Loading..." : getFilterDescription()}
           </CardDescription>
           <div className="mt-2 text-sm">
-            <span className="font-semibold text-orange-600">{currentFilter === "all" ? "Total Orders:" : "Total Orders:"}</span> {getDisplayOrders()} |{" "}
-            <span className="font-semibold text-orange-600">{currentFilter === "all" ? "Total Revenue:" : "Total Revenue:"}</span> {formatCurrency(getDisplayRevenue())}
+            <span className="font-semibold text-orange-600">
+              {currentFilter === "all" ? "Total Orders:" : "Orders:"}
+            </span>{" "}
+            {getDisplayOrders()} |{" "}
+            <span className="font-semibold text-orange-600">
+              {currentFilter === "all" ? "Total Revenue:" : "Revenue:"}
+            </span>{" "}
+            {formatCurrency(getDisplayRevenue())}
           </div>
         </div>
 
@@ -293,7 +393,10 @@ export default function RevenueWithDatePicker() {
           </Select>
 
           <div className="relative w-full sm:w-auto" ref={dropdownRef}>
-            <button onClick={() => setShowDatePicker(!showDatePicker)} className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 mt-2 sm:mt-0 w-full sm:w-auto transition-colors">
+            <button
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 mt-2 sm:mt-0 w-full sm:w-auto transition-colors"
+            >
               Custom Range
             </button>
 
@@ -302,18 +405,35 @@ export default function RevenueWithDatePicker() {
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col">
                     <label className="text-sm font-medium text-gray-700 mb-2">From Date</label>
-                    <input type="date" className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200" value={fromDate} onChange={e => setFromDate(e.target.value)} />
+                    <input
+                      type="date"
+                      className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                    />
                   </div>
                   <div className="flex flex-col">
                     <label className="text-sm font-medium text-gray-700 mb-2">To Date</label>
-                    <input type="date" className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200" value={toDate} onChange={e => setToDate(e.target.value)} />
+                    <input
+                      type="date"
+                      className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                    />
                   </div>
                 </div>
                 <div className="flex gap-2 justify-end">
-                  <button onClick={handleApply} disabled={!fromDate || !toDate} className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:bg-orange-300 disabled:cursor-not-allowed transition-colors">
+                  <button
+                    onClick={handleApply}
+                    disabled={!fromDate || !toDate}
+                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:bg-orange-300 disabled:cursor-not-allowed transition-colors"
+                  >
                     Apply
                   </button>
-                  <button onClick={handleClear} className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                  <button
+                    onClick={handleClear}
+                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                  >
                     Clear
                   </button>
                 </div>
@@ -341,12 +461,64 @@ export default function RevenueWithDatePicker() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
-              <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={value => `₹${value}`} />
-              <ChartTooltip
-                content={<ChartTooltipContent labelFormatter={value => `Date: ${value}`} formatter={value => [formatCurrency(value), "Revenue"]} />}
+              
+              <XAxis
+                dataKey="date"
+                type="number" // Use 'number' for timestamps
+                scale="time"   // Tell recharts it's a time scale
+                domain={chartDomain} // Force the domain
+                allowDataOverflow={true} // Ensure domain is respected
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={formatXAxisTick} // Formatter handles timestamps
+                minTickGap={20} // Prevent labels from overlapping
               />
-              <Area dataKey="revenue" type="monotone" fill="url(#fillRevenue)" stroke="#f97316" strokeWidth={2} dot={{ fill: "#f97316", strokeWidth: 2, r: 4 }} activeDot={{ r: 6, stroke: "#f97316", strokeWidth: 2 }} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={formatYAxis} // Use 'k' formatter
+                domain={[0, "auto"]} // Start Y-axis at 0
+              />
+              <ChartTooltip
+                cursor={{ stroke: "#f97316", strokeWidth: 1, strokeDasharray: "3 3" }}
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(label, payload) => {
+                      try {
+                        // payload[0].payload.date is the Date object
+                        const date = new Date(payload[0].payload.date)
+                        if (xAxisFormat === "hour") {
+                          return date.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            hour12: true
+                          })
+                        }
+                        return date.toLocaleDateString("en-US", {
+                          weekday: "long",
+                          month: "short",
+                          day: "numeric",
+                        })
+                      } catch (e) {
+                        return label
+                      }
+                    }}
+                    formatter={(value) => [formatCurrency(value), "Revenue"]}
+                  />
+                }
+              />
+              <Area
+                dataKey="revenue"
+                type="monotone"
+                fill="url(#fillRevenue)"
+                stroke="#f97316"
+                strokeWidth={2}
+                dot={{ fill: "#f97316", strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6, stroke: "#fff", strokeWidth: 2, fill: "#f97316" }}
+              />
             </AreaChart>
           </ChartContainer>
         ) : (
