@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { useMenu } from "../hooks/useMenu";
 import { useRestaurant } from "../hooks/useRestaurant"; // separate hook
 import Header from "@/components/Client/Header";
-import SearchItem from "@/components/Client/SearchItem";
 import Filter from "@/components/Client/Filter";
 import Category from "@/components/Client/Category";
 import FoodListing from "@/components/Client/FoodListing";
@@ -95,8 +94,9 @@ export default function Home() {
         <Header
           logo={restaurantData.restaurant?.logo?.url}
           siteName={restaurantData.restaurant?.restaurantName}
+          search={search}
+          onSearch={setSearch}
         />
-        <SearchItem search={search} onSearch={setSearch} />
         <Filter filters={filters} onChange={handleFilterChange} />
         <Category
           title="Food Categories"
@@ -105,8 +105,7 @@ export default function Home() {
           activeCategory={activeCategory}
         />
       </div>
-      <FoodListing className="relative z-50" menu={filteredMenu} onQuantityChange={setTotal} />
-      <Copywright />
+      <FoodListing menu={filteredMenu} onQuantityChange={setTotal} />
     </>
   );
 }

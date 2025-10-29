@@ -1,9 +1,9 @@
 export const getRestaurant = async () => {
-    // console.log("🔍 API Base URL:", import.meta.env.VITE_API_BASE_URL);
+    console.log("🔍 API Base URL:", import.meta.env.VITE_API_BASE_URL);
 
   try {
     const response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/api/restaurant/public`
+      `/api/restaurant/public`
     );
 
     if (!response.ok) {
