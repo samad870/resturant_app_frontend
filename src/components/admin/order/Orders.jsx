@@ -53,8 +53,6 @@ const Orders = () => {
       const res = await fetch(`${config.BASE_URL}/api/restaurant/admin`, {
         headers: { 
           Authorization: `Bearer ${token}`,
-          "Cache-Control": "no-cache",
-          Pragma: "no-cache",
         },
       });
       if (!res.ok) throw new Error("Failed to fetch restaurant details");
@@ -82,8 +80,6 @@ const Orders = () => {
       });
       if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
-      console.log(data)
-      console.log(data)
       if (!Array.isArray(data)) throw new Error("Invalid data format from API");
       setOrders(data.reverse());
       setLastUpdated(new Date()); // Already here, perfect

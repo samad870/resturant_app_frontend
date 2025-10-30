@@ -80,13 +80,9 @@ export default function NotificationBell() {
       const allOrders = Array.isArray(data) ? data : data.orders || [];
 
       if (Array.isArray(allOrders)) {
-        // Only add PENDING orders to the initial "known" set
-        // to avoid re-notifying for old completed ones.
-        // Or, to be safe, add all IDs to prevent any old order from ever notifying.
+        
         allOrders.forEach((order) => knownOrderIds.current.add(order._id));
-        console.log(
-          `Initial load: Added ${knownOrderIds.current.size} existing order IDs.`
-        );
+       
       }
     } catch (error) {
       console.error("Error on initial order fetch:", error);

@@ -737,7 +737,7 @@ const Profile = () => {
         }
 
         const data = await res.json();
-        console.log("Fetched restaurant data:", data);
+        // console.log("Fetched restaurant data:", data);
 
         if (data.restaurant) {
           const r = data.restaurant;

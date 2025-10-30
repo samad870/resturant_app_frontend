@@ -1,7 +1,7 @@
 import config from "../config";
 
 export const getRestaurant = async () => {
-    console.log("🔍 API Base URL:", config.BASE_URL);
+   
   try {
     const response = await fetch(
       `${config.BASE_URL}/api/restaurant/public`,
