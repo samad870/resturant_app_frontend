@@ -74,15 +74,16 @@ const CancelledOrders = () => {
   }, [token]);
 
   // 2. Add function to fetch restaurant details
+ 
+
   const fetchRestaurantDetails = useCallback(async () => {
     if (!token) return;
     try {
       const res = await fetch(`${config.BASE_URL}/api/restaurant/admin`, {
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Cache-Control": "no-cache",
-          Pragma: "no-cache",
-        },
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
       });
       if (!res.ok) throw new Error("Failed to fetch restaurant details");
       const data = await res.json();

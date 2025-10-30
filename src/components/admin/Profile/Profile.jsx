@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion"; // Added import
+import config from "@/config";
 
 // --- Reusable UI Components (from UpdateProfile) ---
 
@@ -331,7 +332,7 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
       }
 
       // Using relative path, assuming your API is on the same domain
-      const res = await fetch(`/api/restaurant/`, {
+      const res = await fetch(`${config.BASE_URL}/api/restaurant/`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
         body: formDataToUpload,
@@ -415,26 +416,7 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
         <div>
           <div className="w-full max-w-3xl mx-auto space-y-6">
             <motion.form onSubmit={handleSubmit} className="space-y-6 p-2">
-              {/* <FormCard
-                title="Business Details (Uneditable)"
-                icon="🔒"
-                customIndex={0}
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <DisabledFormField
-                    label="Owner Name"
-                    value={initialData.name}
-                  />
-                  <DisabledFormField
-                    label="Restaurant Name"
-                    value={initialData.restaurantName}
-                  />
-                  <DisabledFormField
-                    label="Client Domain"
-                    value={initialData.domain}
-                  />
-                </div>
-              </FormCard> */}
+             
 
               <FormCard title="Core Profile" icon="✏️" customIndex={1}>
                 <FormField
@@ -676,6 +658,9 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
 };
 
 // --- Main Profile Component ---
+
+const API_URL = `${config.BASE_URL}/api/restaurant`;
+
 const Profile = () => {
   const [profileData, setProfileData] = useState({
     name: "",
@@ -722,14 +707,13 @@ const Profile = () => {
       }
 
       try {
-        const res = await fetch("/api/restaurant/admin", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Cache-Control": "no-cache",
-            Pragma: "no-cache",
+        const res = await fetch(`${API_URL}/admin`, {
+         headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
           },
         });
-
+      
         if (!res.ok) {
           throw new Error(
             `Failed to fetch restaurant details (Status: ${res.status})`
@@ -737,7 +721,7 @@ const Profile = () => {
         }
 
         const data = await res.json();
-        // console.log("Fetched restaurant data:", data);
+        console.log("Fetched restaurant data:", data);
 
         if (data.restaurant) {
           const r = data.restaurant;
@@ -776,7 +760,7 @@ const Profile = () => {
     };
 
     fetchAdminDetails();
-  }, [token, triggerRefetch]); // Re-fetch when token or triggerRefetch changes
+  }, [API_URL,token, triggerRefetch]); // Re-fetch when token or triggerRefetch changes
 
   const downloadQRCode = () => {
     if (profileData.qrCode) {

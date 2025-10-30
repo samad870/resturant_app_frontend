@@ -81,7 +81,7 @@ export function SuperAdminSidebar({ ...props }) {
     console.log(`Navigation tracked: ${itemTitle} -> ${itemUrl}`);
   };
 
-  // Enhanced auto-close with responsive detection
+  
   React.useEffect(() => {
     const handleRouteChange = () => {
       if (window.innerWidth < 1024) {
@@ -89,8 +89,6 @@ export function SuperAdminSidebar({ ...props }) {
       }
     };
 
-    // Track route changes for analytics
-    // console.log(`Route changed to: ${location.pathname}`);
     handleRouteChange();
   }, [location.pathname, toggleSidebar]);
 

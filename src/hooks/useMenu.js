@@ -39,7 +39,6 @@ export function useMenu() {
       try {
         const data = await getMenu(); // no param
         setMenu(data);
-        // console.log("items", data);
       } catch (err) {
         setError(err.message || "Error fetching menu");
       } finally {

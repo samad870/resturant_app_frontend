@@ -35,16 +35,7 @@ export function AppSidebar({ ...props }) {
   const data = {
     user: userData,
     navMain: [
-      // {
-      //   title: "Profile Management",
-      //   url: "#",
-      //   icon: User,
-      //   isActive: true,
-      //   items: [
-      //     { title: "Profile", url: "/admin/profile" },
-      //     { title: "Update Profile", url: "/admin/update-profile" },
-      //   ],
-      // },
+     
       {
         title: "Order Management",
         url: "#",

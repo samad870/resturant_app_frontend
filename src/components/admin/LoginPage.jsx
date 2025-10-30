@@ -1,11 +1,9 @@
-/* eslint-disable no-unused-vars */
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { VITE_API_BASE_URL } from "../../../env.config";
-// import baseURL from "../../config";
 import config from "../../config";
 
 const LoginPage = () => {
@@ -22,9 +20,7 @@ const LoginPage = () => {
     setError("");
 
     try {
-      // ✅ Use local proxy
-      // const baseURL = ; // proxy
-      // `${config.BASE_URL}/api/products`
+      
       const response = await fetch(`${config.BASE_URL}/api/auth/login`,
          {
         method: "POST",

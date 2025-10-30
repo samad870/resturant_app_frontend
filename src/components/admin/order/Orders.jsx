@@ -51,9 +51,10 @@ const Orders = () => {
     if (!token) return; 
     try {
       const res = await fetch(`${config.BASE_URL}/api/restaurant/admin`, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-        },
+      headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
       });
       if (!res.ok) throw new Error("Failed to fetch restaurant details");
       
@@ -130,26 +131,22 @@ const Orders = () => {
     }
   };
   useEffect(() => {
-    // Check if the bill modal is currently open
+    
     if (orderForBillModal) {
-      // Find the updated version of this order from the main 'orders' list
+      
       const updatedOrder = orders.find(
         (o) => o._id === orderForBillModal._id
       );
 
       if (updatedOrder) {
-        // If we found the updated order, update the state
-        // This will pass the new 'order' prop to the modal,
-        // causing it to re-render with the fresh data.
+       
         setOrderForBillModal(updatedOrder);
       } else {
-        // If the order wasn't found (e.g., it was deleted),
-        // just close the modal.
+        
         setOrderForBillModal(null);
       }
     }
-    // We ONLY want this effect to run when the 'orders' list itself changes.
-    // Do not add 'orderForBillModal' to this dependency array.
+   
   }, [orders]);
 
   // ✅ 2. FILLED IN deleteOrder (copied from PendingOrders)

@@ -23,9 +23,7 @@ export function NavMain({ items }) {
 
   return (
     <SidebarGroup>
-      {/* <SidebarGroupLabel className="text-xs font-semibold text-gray uppercase tracking-wider">
-        ADMIN
-      </SidebarGroupLabel> */}
+     
       <SidebarMenu className="mt-2">
         {items.map((item) => {
           const isActive = item.items

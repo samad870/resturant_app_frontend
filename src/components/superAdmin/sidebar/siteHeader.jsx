@@ -124,21 +124,7 @@ export function SiteHeader() {
 
         <Separator orientation="vertical" className="mr-2 h-4" />
 
-        {/* Dynamic breadcrumb based on current route */}
-        {/* <Breadcrumb className="hidden sm:block">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="#">Building Your Application</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Data Fetching</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb> */}
-
-        {/* Search with future enhancement placeholder */}
-        {/* <SearchForm className="w-full sm:ml-auto sm:w-auto" /> */}
+       
       </div>
     </header>
   );

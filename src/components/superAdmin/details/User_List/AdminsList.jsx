@@ -123,9 +123,7 @@ export default function AdminsList() {
                         <div className="flex items-center gap-3">
                           <div className="flex flex-row gap-2">
                             <div className="font-medium text-gray-900">{admin.name}</div>
-                            {/* <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                              {admin.role}
-                            </Badge> */}
+                            
                           </div>
                         </div>
                       </TableCell>

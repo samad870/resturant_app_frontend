@@ -17,9 +17,6 @@ import PrivateRoute from "./components/admin/PrivateRoute";
 import Orders from "./components/admin/order/Orders";
 import CompletedOrders from "./components/admin/order/CompletedOrders";
 import CancelledOrders from "./components/admin/order/CancelledOrders";
-// import Profile from "./components/admin/Profile/Profile";
-// import RestaurantForm from "./components/admin/Profile/RestaurantForm";
-// import UpdateProfile from "./components/admin/Profile/UpdateProfile";
 import Adminprofile from "./components/admin/Profile/Profile";
 import Revenue from "./components/admin/observability/Revenue";
 import ComingSoon from "./components/admin/common/ComingSoon";
@@ -32,8 +29,6 @@ import AdminsList from "./components/superAdmin/details/User_List/AdminsList";
 import SuperAdminLayout from "./layouts/SuperAdminLayout";
 import SuperAdminProfile from "./components/superAdmin/Pages/SuperAdminProfile";
 
-// Remove the duplicate SuperAdminLayout import and SuperAdminPrivateRoute
-// Add this simple SuperAdminPrivateRoute component in this file
 const SuperAdminPrivateRoute = ({ children }) => {
   return children;
 };
@@ -63,13 +58,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         >
           <Route index element={<Admin />} />
           <Route path="menu" element={<Menu />} />
-          {/* <Route path="addItems" element={<AddItems />} /> */}
-          {/* <Route path="orderlist" element={<OrdersList />} /> */}
+          
           <Route path="completedorder" element={<CompletedOrders />} />
           <Route path="orders" element={<Orders />} />
           <Route path="cancelledorder" element={<CancelledOrders />} />
-          {/* <Route path="restaurant-detail" element={<RestaurantForm />} /> */}
-          {/* <Route path="update-profile" element={<UpdateProfile />} /> */}
+         
           <Route path="profile" element={<Adminprofile />} />
           <Route path="sales" element={<ComingSoon />} />
           <Route path="revenue" element={<Revenue />} />

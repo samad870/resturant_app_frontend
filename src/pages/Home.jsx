@@ -1,9 +1,9 @@
-/* eslint-disable no-unused-vars */
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { useMenu } from "../hooks/useMenu";
-import { useRestaurant } from "../hooks/useRestaurant"; // separate hook
+import { useRestaurant } from "../hooks/useRestaurant";
 import Header from "@/components/Client/Header";
 import Filter from "@/components/Client/Filter";
 import Category from "@/components/Client/Category";
@@ -18,8 +18,7 @@ export default function Home() {
     loading: restaurantLoading,
     error: restaurantError,
   } = useRestaurant();
-  // console.log("🍽️ Restaurant Data:", restaurantData);
-  // console.log("🍽️ Restaurant items:", menuData  );
+  
 
   const [showLoader, setShowLoader] = useState(true);
   const [filters, setFilters] = useState({ veg: false, nonVeg: false });
@@ -31,13 +30,6 @@ export default function Home() {
   const loading = menuLoading || restaurantLoading;
   const error = menuError || restaurantError;
 
-  // Debug: print fetched restaurant data
-  // useEffect(() => {
-  //   console.log("🍽️ Restaurant Data:", restaurantData.name);
-  //   console.log("📜 Menu Data:", menuData);
-  // }, [restaurantData]);
-
-  // Ensure loader stays for at least 2 seconds
   useEffect(() => {
     let timer;
     if (loading) {

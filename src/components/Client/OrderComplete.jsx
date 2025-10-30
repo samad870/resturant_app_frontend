@@ -11,10 +11,7 @@ export default function OrderComplete({
     <div>
       <div className="w-full p-2">
         <div className="flex items-center justify-between">
-          {/* <span className="flex items-center gap-1 text-base">
-            <IndianRupee />
-            {amount.toLocaleString("en-IN")}
-          </span> */}
+      
           <Button
             className="bg-primary text-white runded-full"
             onClick={onClick}
