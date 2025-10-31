@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import React from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { X, Clock, MapPin, Phone, Search, UtensilsCrossed } from "lucide-react";
 import { FiShoppingCart } from "react-icons/fi";
 import { Link } from "react-router-dom";
@@ -8,7 +9,7 @@ import {
   removeFromCart,
   incrementQuantity,
   clearCart,
-} from "../../features/cartSlice";
+} from "../../redux/clientRedux/clientSlice"; // ✅ UPDATED: Import from clientSlice
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import OrderComplete from "@/components/Client/OrderComplete";
@@ -19,9 +20,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import Copywright from "@/components/Client/Copywright";
-import { useRestaurant } from "../../hooks/useRestaurant";
-import config from "../../config";
+import { useGetRestaurantQuery, useCreateOrderMutation } from "../../redux/clientRedux/clientAPI";
 import OrderFormModal from "./OrderFormModal";
+
+// ✅ UPDATED: Selector for new cart structure
+const selectCartItems = (state) => state.client?.cart?.items;
 
 export default function Header({
   logo,
@@ -32,10 +35,13 @@ export default function Header({
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(false);
+  
   const { toast } = useToast();
-  const { data: restaurantData } = useRestaurant();
   const searchRef = useRef(null);
+
+  // RTK Query hooks
+  const { data: restaurantData, isLoading: restaurantLoading, error: restaurantError } = useGetRestaurantQuery();
+  const [createOrder, { isLoading: orderLoading, error: orderError }] = useCreateOrderMutation();
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -45,17 +51,18 @@ export default function Header({
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
 
   const dispatch = useDispatch();
-  const cartItems = useSelector((state) => state.cart.items);
-
-  const cartCount = Object.values(cartItems).reduce(
-    (acc, item) => acc + item.quantity,
-    0
-  );
-
-  const totalAmount = Object.values(cartItems).reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0
-  );
+  
+  // ✅ UPDATED: Use new cart selector
+  const cartItems = useSelector(selectCartItems);
+  
+  // ✅ UPDATED: Memoized calculations with new structure
+  const { cartCount, totalAmount } = useMemo(() => {
+    const items = cartItems || {};
+    const itemValues = Object.values(items);
+    const count = itemValues.reduce((acc, item) => acc + (item?.quantity || 0), 0);
+    const total = itemValues.reduce((acc, item) => acc + ((item?.price || 0) * (item?.quantity || 0)), 0);
+    return { cartCount: count, totalAmount: total };
+  }, [cartItems]);
 
   const [activeOrders, setActiveOrders] = useState([]);
   const expiryTimersRef = useRef({});
@@ -281,14 +288,21 @@ export default function Header({
         return;
       }
 
-      setLoading(true);
+      // ✅ FIXED: Safe cart items mapping
+      const items = cartItems || {};
+      const orderItems = Object.values(items)
+        .filter(item => item && item._id) // Filter out invalid items
+        .map((item) => ({
+          menuItemId: item._id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        }));
 
-      const orderItems = Object.values(cartItems).map((item) => ({
-        menuItemId: item._id,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-      }));
+      if (orderItems.length === 0) {
+        showErrorMessage("Your cart is empty. Please add items before ordering.");
+        return;
+      }
 
       const orderData = {
         customerName: customerName.trim(),
@@ -305,17 +319,11 @@ export default function Header({
         orderData.address = address.trim();
       }
 
-      const response = await fetch(`${config.BASE_URL}/api/order`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData),
-      });
+      // RTK Mutation call
+      const result = await createOrder(orderData).unwrap();
 
-      if (!response.ok) throw new Error("Failed to place order");
-
-      const data = await response.json();
       const completeOrderData = {
-        id: data?.orderId || `ORD${Date.now()}`,
+        id: result?.orderId || `ORD${Date.now()}`,
         ...orderData,
         createdAt: Date.now(),
       };
@@ -343,9 +351,8 @@ export default function Header({
       }, 300);
     } catch (error) {
       console.error("Error placing order:", error);
-      showErrorMessage("Failed to place order. Please try again.");
-    } finally {
-      setLoading(false);
+      const errorMessage = error?.data?.message || "Failed to place order. Please try again.";
+      showErrorMessage(errorMessage);
     }
   };
 
@@ -363,8 +370,8 @@ export default function Header({
     <>
       <Toaster />
       <div className="relative z-50">
-        {/* 🌟 Bottom Order Summary */}
-        {totalAmount > 0 && (
+        {/* 🌟 Bottom Order Summary - ✅ FIXED: Now will show when items are added */}
+        {totalAmount > 0 && cartCount > 0 && (
           <div className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-md rounded-t-3xl border-t border-gray-200 shadow-[0_-8px_30px_rgba(0,0,0,0.1)]">
             <Accordion type="single" collapsible>
               <AccordionItem value="item-1">
@@ -383,7 +390,7 @@ export default function Header({
                       </p>
                     ) : (
                       <ul className="space-y-3">
-                        {Object.entries(cartItems).map(([id, item]) => (
+                        {Object.entries(cartItems || {}).map(([id, item]) => (
                           <li
                             key={id}
                             className="flex items-center justify-between bg-gray-50 rounded-xl p-3 border border-gray-100 hover:bg-gray-100 transition-all"
@@ -391,7 +398,7 @@ export default function Header({
                             {/* Item details */}
                             <div className="flex flex-col">
                               <p className="font-medium text-gray-800 text-[14px] leading-tight">
-                                {item.name}
+                                {item?.name || "Unknown Item"}
                               </p>
                               <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                                 {/* Quantity Controls */}
@@ -402,7 +409,7 @@ export default function Header({
                                   −
                                 </button>
                                 <span className="w-5 text-center font-medium text-gray-700">
-                                  {item.quantity}
+                                  {item?.quantity || 0}
                                 </span>
                                 <button
                                   className="w-6 h-6 flex items-center justify-center border border-gray-300 rounded-full hover:bg-gray-200 text-[13px] font-bold transition"
@@ -414,14 +421,14 @@ export default function Header({
                                 </button>
 
                                 <span className="ml-2 text-gray-600">
-                                  × ₹{item.price.toFixed(2)}
+                                  × ₹{(item?.price || 0).toFixed(2)}
                                 </span>
                               </div>
                             </div>
 
                             {/* Item total */}
                             <p className="font-semibold text-gray-800 text-[14px]">
-                              ₹{(item.price * item.quantity).toFixed(2)}
+                              ₹{((item?.price || 0) * (item?.quantity || 0)).toFixed(2)}
                             </p>
                           </li>
                         ))}
@@ -444,7 +451,7 @@ export default function Header({
                 </h3>
               </div>
 
-              {/* Order Now Button */}
+              {/* Order Now Button - ✅ FIXED: Now will show */}
               <OrderComplete
                 amount={totalAmount.toFixed(2)}
                 buttonText="Order Now"
@@ -714,7 +721,7 @@ export default function Header({
           setAddress={setAddress}
           useCurrentLocation={useCurrentLocation}
           setUseCurrentLocation={setUseCurrentLocation}
-          loading={loading}
+          loading={orderLoading}
           handleOrderSubmit={handleOrderSubmit}
           restaurantData={restaurantData}
           logo={logo}

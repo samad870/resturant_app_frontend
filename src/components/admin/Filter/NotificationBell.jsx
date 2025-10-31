@@ -5,112 +5,96 @@ import React, {
   useRef,
   useCallback,
 } from "react";
-import { Link } from "react-router-dom"; // ✅ Import Link
+import { Link } from "react-router-dom";
 import audio from "@/assets/orderRing.mp3";
-import config from "../../../config"; // ✅ Ensure this path is correct
-// eslint-disable-next-line no-unused-vars
-import { motion, AnimatePresence } from "framer-motion"; // ✅ Import motion
+import { motion, AnimatePresence } from "framer-motion";
 import { Bell } from "lucide-react";
 
-const POLLING_INTERVAL = 30000; // 30 seconds
+import { useGetOrdersQuery } from "@/redux/adminRedux/adminAPI";
+
+const POLLING_INTERVAL = 15000; // 15 seconds
 
 export default function NotificationBell() {
+  // RTK Query hook
+  const {
+    data: ordersResponse,
+    isLoading,
+    isError,
+  } = useGetOrdersQuery(undefined, {
+    pollingInterval: POLLING_INTERVAL,
+    skip: !localStorage.getItem("token"),
+  });
+
   const [notificationCount, setNotificationCount] = useState(0);
   const [latestOrders, setLatestOrders] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const knownOrderIds = useRef(new Set());
   const notificationSound = useMemo(() => new Audio(audio), []);
-  const [token] = useState(() => localStorage.getItem("token") || "");
+  const isInitialMount = useRef(true);
 
-  const checkForNewOrders = useCallback(async () => {
-    if (!token) return;
-    try {
-      // ✅ Use config.BASE_URL
-      const res = await fetch(`${config.BASE_URL}/api/order`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  // Extract orders array safely
+  const allOrders = useMemo(() => {
+    if (!ordersResponse) return [];
+    return Array.isArray(ordersResponse)
+      ? ordersResponse
+      : ordersResponse.orders || [];
+  }, [ordersResponse]);
 
-      if (!res.ok) throw new Error("Failed to fetch orders during poll");
-
-      let data = await res.json();
-      const allOrders = Array.isArray(data) ? data : data.orders || [];
-
-      if (!Array.isArray(allOrders)) {
-        console.error("Fetched data is not an array:", allOrders);
-        return;
-      }
-
-      const newOrdersFound = [];
-
-      // ✅ Filter for *only* new 'pending' orders
-      for (const order of allOrders) {
-        if (order.status === "pending" && !knownOrderIds.current.has(order._id)) {
-          newOrdersFound.push(order);
-          knownOrderIds.current.add(order._id);
-        }
-      }
-
-      if (newOrdersFound.length > 0) {
-        console.log("Found new pending orders:", newOrdersFound);
-
-        notificationSound
-          .play()
-          .catch((e) => console.error("Error playing sound:", e));
-
-        setNotificationCount((prevCount) => prevCount + newOrdersFound.length);
-        setLatestOrders((prevOrders) =>
-          [...newOrdersFound, ...prevOrders].slice(0, 10) // Keep latest 10
-        );
-      }
-    } catch (error) {
-      console.error("Error polling for orders:", error);
-    }
-  }, [notificationSound, token]);
-
-  const runInitialCheck = useCallback(async () => {
-    if (!token) return;
-    try {
-      // ✅ Use config.BASE_URL
-      const res = await fetch(`${config.BASE_URL}/api/order`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Initial order fetch failed");
-
-      let data = await res.json();
-      const allOrders = Array.isArray(data) ? data : data.orders || [];
-
-      if (Array.isArray(allOrders)) {
-        
-        allOrders.forEach((order) => knownOrderIds.current.add(order._id));
-       
-      }
-    } catch (error) {
-      console.error("Error on initial order fetch:", error);
-    }
-  }, [token]);
-
+  // Initialize knownOrderIds on first load and detect new orders
   useEffect(() => {
-    runInitialCheck();
-    const intervalId = setInterval(checkForNewOrders, POLLING_INTERVAL);
-    return () => clearInterval(intervalId);
-  }, [runInitialCheck, checkForNewOrders]);
+    if (isLoading || isError || !allOrders.length) return;
 
-  const handleBellClick = () => {
-    setIsDropdownOpen((prev) => !prev);
-    // Only reset count when OPENING the dropdown
-    if (!isDropdownOpen) {
-      setNotificationCount(0);
+    if (isInitialMount.current) {
+      // First load - add all orders to known IDs without notifications
+      allOrders.forEach((order) => knownOrderIds.current.add(order._id));
+      isInitialMount.current = false;
+      return;
     }
+
+    // Subsequent loads - check for new pending orders
+    const newPendingOrders = allOrders.filter(
+      (order) =>
+        order.status === "pending" && !knownOrderIds.current.has(order._id)
+    );
+
+    if (newPendingOrders.length > 0) {
+      // console.log("New pending orders:", newPendingOrders);
+      
+      // Play notification sound
+      notificationSound.play().catch((e) => console.error("Sound error:", e));
+
+      // Update notification count and latest orders
+      setNotificationCount((prev) => prev + newPendingOrders.length);
+      setLatestOrders((prev) => [...newPendingOrders, ...prev].slice(0, 10));
+
+      // Add new orders to known IDs
+      newPendingOrders.forEach((order) => knownOrderIds.current.add(order._id));
+    }
+  }, [allOrders, isLoading, isError, notificationSound]);
+
+  // Handlers
+  const handleBellClick = () => {
+    setIsDropdownOpen((prev) => {
+      if (!prev) setNotificationCount(0); // Reset only on open
+      return !prev;
+    });
   };
 
-  const handleLinkClick = () => {
-    setIsDropdownOpen(false); // Close dropdown when a link is clicked
+  const handleLinkClick = () => setIsDropdownOpen(false);
+
+  const clearList = () => {
+    setLatestOrders([]);
+    setIsDropdownOpen(false);
   };
 
   return (
     <div className="relative">
-      {/* Bell Icon and Badge */}
-      <button onClick={handleBellClick} className="relative text-gray-600 focus:outline-none">
+      {/* Bell Icon + Badge */}
+      <button
+        onClick={handleBellClick}
+        className="relative text-gray-600 focus:outline-none"
+      >
         <Bell size={30} color="#ffc107" strokeWidth={2.25} />
         {notificationCount > 0 && (
           <span className="absolute -top-1 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white pointer-events-none">
@@ -119,7 +103,7 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {/* Dropdown List */}
+      {/* Dropdown */}
       <AnimatePresence>
         {isDropdownOpen && (
           <motion.div
@@ -130,8 +114,11 @@ export default function NotificationBell() {
             className="absolute right-0 mt-2 w-72 rounded-lg bg-white shadow-xl border border-gray-200 z-50 overflow-hidden"
           >
             <div className="p-3 border-b border-gray-100">
-              <h4 className="text-base font-semibold text-gray-800">New Orders</h4>
+              <h4 className="text-base font-semibold text-gray-800">
+                New Orders
+              </h4>
             </div>
+
             <div className="max-h-80 overflow-y-auto">
               {latestOrders.length > 0 ? (
                 latestOrders.map((order) => (
@@ -141,42 +128,39 @@ export default function NotificationBell() {
                   >
                     <p className="font-medium text-gray-700">
                       Order #{order._id.slice(-6).toUpperCase()}
-                      <span className="text-xs text-gray-500 ml-1">({order.customerName || 'Unknown'})</span>
+                      <span className="text-xs text-gray-500 ml-1">
+                        ({order.customerName || "Unknown"})
+                      </span>
                     </p>
                     <p className="text-xs text-gray-500 mb-1">
-                      Total: ₹{order.totalAmount?.toFixed(2) ?? 'N/A'}
+                      Total: ₹{order.totalAmount?.toFixed(2) ?? "N/A"}
                     </p>
 
-                    {/* ✅ --- MODIFIED LINK --- */}
-                    {/* This now links to the orders page with the correct query param */}
                     <Link
-                      // Change '/admin/orders' if your route is different
-                      to={`/admin/orders?orderId=${order._id}`} 
-                      onClick={handleLinkClick} // Close dropdown on click
+                      to={`/admin/orders?orderId=${order._id}`}
+                      onClick={handleLinkClick}
                       className="text-xs text-blue-500 hover:underline"
                     >
                       View Order Bill
                     </Link>
-                    {/* --- End Change --- */}
-
                   </div>
                 ))
               ) : (
-                <p className="p-4 text-center text-sm text-gray-500">No new orders.</p>
+                <p className="p-4 text-center text-sm text-gray-500">
+                  No new orders.
+                </p>
               )}
             </div>
+
             {latestOrders.length > 0 && (
-                 <div className="p-2 bg-gray-50 border-t border-gray-100">
-                      <button
-                           onClick={() => {
-                                setLatestOrders([]);
-                                setIsDropdownOpen(false);
-                           }}
-                           className="w-full text-center text-xs text-gray-600 hover:text-black focus:outline-none"
-                      >
-                           Clear List
-                      </button>
-                 </div>
+              <div className="p-2 bg-gray-50 border-t border-gray-100">
+                <button
+                  onClick={clearList}
+                  className="w-full text-center text-xs text-gray-600 hover:text-black focus:outline-none"
+                >
+                  Clear List
+                </button>
+              </div>
             )}
           </motion.div>
         )}

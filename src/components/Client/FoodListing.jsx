@@ -1,9 +1,12 @@
 "use client";
 import { useDispatch, useSelector } from "react-redux";
-import { addToCart, removeFromCart } from "../../features/cartSlice";
+import { addToCart, removeFromCart } from "../../redux/clientRedux/clientSlice"; // ✅ UPDATED: Import from clientSlice
 import { Dot } from "lucide-react";
 import { Button } from "../ui/button";
 import { useEffect, useState } from "react";
+
+// ✅ UPDATED: Selector for new cart structure
+const selectCartItems = (state) => state.client?.cart?.items;
 
 const groupByCategory = (items) => {
   return items.reduce((acc, item) => {
@@ -16,13 +19,17 @@ const groupByCategory = (items) => {
 export default function FoodListing({ menu, onQuantityChange }) {
   const groupedMenu = groupByCategory(menu || []);
   const dispatch = useDispatch();
-  const cartItems = useSelector((state) => state.cart.items || {});
+  
+  // ✅ UPDATED: Use new cart selector
+  const cartItems = useSelector(selectCartItems);
+  
   const [descModal, setDescModal] = useState({ open: false, text: "" });
 
   useEffect(() => {
     if (onQuantityChange) {
-      const total = Object.values(cartItems).reduce(
-        (acc, item) => acc + item.price * item.quantity,
+      const items = cartItems || {};
+      const total = Object.values(items).reduce(
+        (acc, item) => acc + (item?.price || 0) * (item?.quantity || 0),
         0
       );
       onQuantityChange(total);
@@ -60,9 +67,9 @@ export default function FoodListing({ menu, onQuantityChange }) {
           {/* ✅ Food Cards */}
           <div className="flex flex-col gap-5">
             {groupedMenu[category].map((item) => {
-              const quantity = cartItems[item._id]?.quantity || 0;
+              const items = cartItems || {};
+              const quantity = items[item._id]?.quantity || 0;
               const isUnavailable = !item.available;
-              // Description preview length set to 40 characters
 
               return (
                 <div

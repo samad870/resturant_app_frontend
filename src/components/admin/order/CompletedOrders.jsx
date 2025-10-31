@@ -1,33 +1,49 @@
-import React, { useCallback, useEffect, useState } from "react";
-// eslint-disable-next-line no-unused-vars
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import OrdersTable from "./OrdersTable";
 import EditOrderModal from "./EditOrderModal";
 import DeleteModal from "./DeleteModal";
 import ItemsModal from "./ItemsModal";
-import config from "../../../config";
+import { 
+  useGetOrdersQuery,
+  useUpdateOrderMutation,
+  useDeleteOrderMutation,
+  useGetRestaurantProfileQuery 
+} from "@/redux/adminRedux/adminAPI";
+import { useGetMenuQuery } from "@/redux/clientRedux/clientAPI";
 
 const CompletedOrders = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [editingOrder, setEditingOrder] = useState(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(null);
   const [selectedItems, setSelectedItems] = useState(null);
-  const [menuItems, setMenuItems] = useState([]);
   const [notification, setNotification] = useState({
     show: false,
     message: "",
     type: "",
   });
 
+  // RTK Queries and Mutations from admin API
+  const { 
+    data: ordersData, 
+    isLoading: ordersLoading, 
+    error: ordersError,
+    refetch: refetchOrders 
+  } = useGetOrdersQuery();
 
-  // ✅ 1. Add state for restaurant details
-  const [restaurantDetails, setRestaurantDetails] = useState(null);
+  const { 
+    data: restaurantData, 
+    isLoading: restaurantLoading,
+    error: restaurantError 
+  } = useGetRestaurantProfileQuery();
 
-  const token = localStorage.getItem("token") || "";
-  const API_URL = `${config.BASE_URL}/api/order`;
-  const tableType = "complete";
+  const { 
+    data: menuData, 
+    isLoading: menuLoading,
+    error: menuError 
+  } = useGetMenuQuery();
+
+  const [updateOrder, { isLoading: isUpdating }] = useUpdateOrderMutation();
+  const [deleteOrder, { isLoading: isDeleting }] = useDeleteOrderMutation();
 
   const showNotification = (message, type = "success") => {
     setNotification({ show: true, message, type });
@@ -40,130 +56,45 @@ const CompletedOrders = () => {
   const closeNotification = () =>
     setNotification({ show: false, message: "", type: "" });
 
-  // ✅ Wrapped in useCallback for useEffect
-  const fetchOrders = useCallback(async () => {
-    if (!token)
-      return showNotification("No token found. Please login first", "error");
-
+  // Handle update order with RTK
+  const handleUpdateOrder = async (orderId, updatedData) => {
     try {
-      setLoading(true);
-      const res = await fetch(API_URL, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to fetch orders");
-      const data = await res.json();
-      if (!Array.isArray(data)) throw new Error("Invalid data format from API");
-      setOrders(data.reverse());
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-      showNotification("Failed to fetch orders", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [token, API_URL]); // Added dependencies
-
-  const fetchMenuItems = useCallback(async () => {
-    // ... (your existing fetchMenuItems code is fine) ...
-    if (!token) return;
-    try {
-      const res = await fetch(`${config.BASE_URL}/api/menu`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to fetch menu items");
-      const data = await res.json();
-      const items = Array.isArray(data) ? data : data.menu || data.data || [];
-      if (!Array.isArray(items)) throw new Error("Invalid menu data");
-      setMenuItems(items);
-    } catch (err) {
-      console.error(err);
-      setMenuItems([]);
-      showNotification("Failed to fetch menu items", "error");
-    }
-  }, [token]);
-
-  // ✅ 2. Add function to fetch restaurant details
-  const fetchRestaurantDetails = useCallback(async () => {
-    if (!token) return;
-    try {
-      const res = await fetch(`${config.BASE_URL}/api/restaurant/admin`, {
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-      });
-      if (!res.ok) throw new Error("Failed to fetch restaurant details");
-      const data = await res.json();
-      if (data.restaurant) {
-        setRestaurantDetails(data.restaurant);
-      } else {
-        throw new Error("Restaurant data not found in response");
-      }
-    } catch (err) {
-      console.error(err);
-      showNotification("Could not load restaurant details for bills", "error");
-    }
-  }, [token]);
-
-  const updateOrder = async (orderId, updatedData) => {
-    // ... (your existing updateOrder code is fine) ...
-    try {
-      const res = await fetch(`${API_URL}/${orderId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(updatedData),
-      });
-      if (!res.ok) throw new Error("Failed to update order");
-      await fetchOrders();
+      await updateOrder({ orderId, updatedData }).unwrap();
       setEditingOrder(null);
       showNotification("Order updated successfully!", "success");
     } catch (err) {
-      console.error(err);
-      showNotification(err.message, "error");
+      showNotification(err?.data?.message || "Failed to update order", "error");
     }
   };
 
-  const deleteOrder = async (orderId) => {
-    // ... (your existing deleteOrder code is fine) ...
+  // Handle delete order with RTK
+  const handleDeleteOrder = async (orderId) => {
     try {
-      const res = await fetch(`${API_URL}/${orderId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to delete order");
-      await fetchOrders();
+      await deleteOrder(orderId).unwrap();
       setShowConfirmDelete(null);
       showNotification("Order deleted successfully!", "success");
     } catch (err) {
-      console.error(err);
-      showNotification(err.message, "error");
+      showNotification(err?.data?.message || "Failed to delete order", "error");
     }
   };
 
-  // ✅ Initial Fetch (Updated dependencies)
-  useEffect(() => {
-    if (!token) {
-      showNotification("No token found. Please login first", "error");
-      setLoading(false);
-      return;
-    }
-    fetchOrders();
-    fetchMenuItems();
-    fetchRestaurantDetails(); // 👈 Call the new function
-  }, [token, fetchOrders, fetchMenuItems, fetchRestaurantDetails]); // 👈 Add dependencies
+  // Process data from RTK queries
+  const orders = ordersData || [];
+  const menuItems = Array.isArray(menuData) ? menuData : menuData?.menu || menuData?.data || [];
+  const restaurantDetails = restaurantData?.restaurant || null;
 
+  const loading = ordersLoading || restaurantLoading || menuLoading;
+  const error = ordersError || restaurantError || menuError;
+
+  // Filter completed orders
   const completedOrders = orders.filter((o) => o.status === "completed");
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8 relative">
-      {/* ... (Notification Modal remains the same) ... */}
+      {/* Notification Modal */}
       <AnimatePresence>
         {notification.show && (
           <motion.div
-            // ... (notification JSX) ...
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -174,7 +105,6 @@ const CompletedOrders = () => {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              // ... (rest of the modal JSX) ...
               transition={{
                 type: "spring",
                 damping: 25,
@@ -189,7 +119,6 @@ const CompletedOrders = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center">
-                {/* ... (icon, text, button) ... */}
                 <div
                   className={`w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-6 ${
                     notification.type === "success"
@@ -267,24 +196,24 @@ const CompletedOrders = () => {
         <h2 className="text-3xl font-bold text-gray-900 mb-6 flex justify-center">
           🏁 Completed Orders
         </h2>
+
         <OrdersTable
           orders={completedOrders}
           loading={loading}
-          error={error}
+          error={error?.data?.message || error?.message}
           setEditingOrder={setEditingOrder}
           setShowConfirmDelete={setShowConfirmDelete}
-          // ✅ 3. FIX: Pass the correct prop name
           setOrderForBillModal={setSelectedItems}
-          updateOrder={updateOrder}
-          tableType={tableType}
+          updateOrder={handleUpdateOrder}
+          tableType="complete"
         />
       </div>
 
-      {/* ✅ 4. Pass restaurantDetails to the modal */}
+      {/* Modals */}
       {selectedItems && (
         <ItemsModal
           order={selectedItems}
-          restaurantDetails={restaurantDetails} // 👈 Pass details
+          restaurantDetails={restaurantDetails}
           onClose={() => setSelectedItems(null)}
         />
       )}
@@ -292,15 +221,17 @@ const CompletedOrders = () => {
         <EditOrderModal
           editingOrder={editingOrder}
           setEditingOrder={setEditingOrder}
-          updateOrder={updateOrder}
+          updateOrder={handleUpdateOrder}
           menuItems={menuItems}
+          isUpdating={isUpdating}
         />
       )}
       {showConfirmDelete && (
         <DeleteModal
           order={showConfirmDelete}
           onCancel={() => setShowConfirmDelete(null)}
-          onDelete={() => deleteOrder(showConfirmDelete._id)}
+          onDelete={() => handleDeleteOrder(showConfirmDelete._id)}
+          isDeleting={isDeleting}
         />
       )}
     </div>

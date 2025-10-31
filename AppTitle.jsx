@@ -1,39 +1,56 @@
+// src/components/AppTitle.jsx
 import { useEffect } from "react";
-import { useRestaurant } from "./src/hooks/useRestaurant"; 
+import { useGetRestaurantQuery } from "./src/redux/clientRedux/clientAPI"; // ✅ Fixed import path
 
 const AppTitle = () => {
-  const { data: restaurantData, isLoading } = useRestaurant();
+  const { data: restaurantData, isLoading, error } = useGetRestaurantQuery();
 
   useEffect(() => {
     if (!isLoading && restaurantData?.restaurant) {
       const { restaurantName, logo } = restaurantData.restaurant;
 
-      
-      document.title = restaurantName || "Loading...";
+      document.title = restaurantName || "Restaurant App";
 
-      
       const updateFavicon = (iconUrl) => {
-        let link =
-          document.querySelector("link[rel~='icon']") ||
-          document.createElement("link");
+        const existingLinks = document.querySelectorAll("link[rel~='icon']");
+        existingLinks.forEach(link => link.remove());
+
+        const link = document.createElement("link");
         link.rel = "icon";
         link.type = "image/png";
-        link.href = iconUrl || "/favicon.ico"; 
-        document.getElementsByTagName("head")[0].appendChild(link);
+        
+        // ✅ Safe check for iconUrl - handle both string and object
+        let finalIconUrl = "/favicon.ico"; // default
+        
+        if (iconUrl) {
+          if (typeof iconUrl === 'string' && (iconUrl.startsWith('http') || iconUrl.startsWith('/'))) {
+            finalIconUrl = iconUrl;
+          } else if (typeof iconUrl === 'string') {
+            finalIconUrl = `/${iconUrl}`;
+          } else if (iconUrl.url && typeof iconUrl.url === 'string') {
+            // ✅ Handle logo object with url property
+            finalIconUrl = iconUrl.url;
+          }
+        }
+        
+        link.href = finalIconUrl;
+        document.head.appendChild(link);
       };
 
-      updateFavicon(logo); 
-    } else {
-      document.title = "Loading...";
-      let link =
-        document.querySelector("link[rel~='icon']") ||
-        document.createElement("link");
+      updateFavicon(logo);
+    } else if (error || (!isLoading && !restaurantData)) {
+      document.title = "Restaurant App";
+      
+      const existingLinks = document.querySelectorAll("link[rel~='icon']");
+      existingLinks.forEach(link => link.remove());
+      
+      const link = document.createElement("link");
       link.rel = "icon";
       link.type = "image/png";
       link.href = "/favicon.ico";
-      document.getElementsByTagName("head")[0].appendChild(link);
+      document.head.appendChild(link);
     }
-  }, [restaurantData, isLoading]);
+  }, [restaurantData, isLoading, error]);
 
   return null;
 };

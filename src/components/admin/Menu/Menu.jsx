@@ -1,21 +1,24 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import config from "../../../config";
-import MenuFilter from "../Filter/MenuFilter";
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   XCircleIcon,
-  // Icon for the "Add" button in the new modal
   PlusIcon as PlusIconSolid,
 } from "@heroicons/react/24/solid";
-// Icon for the image upload area
-import { PhotoIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
-import { CirclePlus } from "lucide-react"; // Icon for the "Add New Item" button
+import { CirclePlus } from "lucide-react";
+import { 
+  useGetMenuQuery,
+  useUpdateMenuItemMutation,
+  useDeleteMenuItemMutation,
+  useCreateMenuItemMutation
+} from "@/redux/adminRedux/adminAPI";
+import { useGetRestaurantProfileQuery } from "@/redux/adminRedux/adminAPI";
+import MenuFilter from "../Filter/MenuFilter";
 
-// Motion Variants (re-used for all modals)
+// Motion Variants
 const modalOverlayVariant = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
@@ -26,7 +29,6 @@ const modalContentVariant = {
   visible: { opacity: 1, scale: 1 },
   exit: { opacity: 0, scale: 0.8 },
 };
-// Variant for the AddItem modal (slight variation)
 const addItemModalVariant = {
   hidden: { opacity: 0, y: 50 },
   visible: { opacity: 1, y: 0 },
@@ -35,9 +37,6 @@ const addItemModalVariant = {
 
 const Menu = () => {
   // --- Main Menu State ---
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [filters, setFilters] = useState({
@@ -52,12 +51,7 @@ const Menu = () => {
     type: "",
   });
 
-  // --- State for Categories (Merged from AddItems) ---
-  const [restaurantCategories, setRestaurantCategories] = useState([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-  const [errorCategories, setErrorCategories] = useState(null);
-
-  // --- NEW: State for Add Item Modal (Merged from AddItems) ---
+  // --- NEW: State for Add Item Modal ---
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addFormData, setAddFormData] = useState({
     name: "",
@@ -69,97 +63,48 @@ const Menu = () => {
   });
   const [addFile, setAddFile] = useState(null);
   const [addFileError, setAddFileError] = useState("");
-  const [isAddingItem, setIsAddingItem] = useState(false); // Form submission loading state
 
-  const API_URL = `${config.BASE_URL}/api/menu`;
-  const token = localStorage.getItem("token");
+  const dropdownRef = useRef(null);
 
+  // RTK Queries and Mutations
+  const { 
+    data: menuData, 
+    isLoading, 
+    error,
+    refetch: refetchMenu 
+  } = useGetMenuQuery();
 
+  const { 
+    data: restaurantData, 
+    isLoading: loadingCategories,
+    error: errorCategories 
+  } = useGetRestaurantProfileQuery();
 
-  // --- Notification Handlers (from Menu.js) ---
-  const showNotification = useCallback((message, type = "success") => {
+  const [updateMenuItem, { isLoading: isUpdating }] = useUpdateMenuItemMutation();
+  const [deleteMenuItem, { isLoading: isDeleting }] = useDeleteMenuItemMutation();
+  const [createMenuItem, { isLoading: isAddingItem }] = useCreateMenuItemMutation();
+
+  // Process data from RTK queries - FIXED THE ERROR HERE
+  const items = Array.isArray(menuData) ? menuData : menuData?.menu || menuData?.data || [];
+  
+  // FIX: Create a copy before sorting to avoid modifying read-only data
+  const restaurantCategories = restaurantData?.restaurant?.categories 
+    ? [...restaurantData.restaurant.categories].sort() 
+    : [];
+
+  // --- Notification Handlers ---
+  const showNotification = (message, type = "success") => {
     setNotification({ show: true, message, type });
-    // Auto-close after 3 seconds
     setTimeout(() => {
       setNotification((n) => (n.show ? { ...n, show: false } : n));
     }, 3000);
-  }, []);
+  };
 
-  const closeNotification = useCallback(() => {
+  const closeNotification = () => {
     setNotification({ show: false, message: "", type: "" });
-  }, []);
+  };
 
-  // --- Fetch Main Menu Data (from Menu.js) ---
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(API_URL, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-        });
-        if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(
-            errData.message || `Failed to fetch menu (Status: ${res.status})`
-          );
-        }
-        const data = await res.json();
-        const menuData = data.menu || data;
-        if (Array.isArray(menuData)) {
-          setItems(menuData);
-        } else {
-          setError("Unexpected API response format");
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [API_URL, token]);
-
-  // --- Fetch Restaurant Categories (IMPROVED: Merged from AddItems) ---
-  useEffect(() => {
-    const fetchRestaurantCategories = async () => {
-      if (!token) {
-        setErrorCategories("Not logged in.");
-        setLoadingCategories(false);
-        return;
-      }
-      try {
-        setLoadingCategories(true);
-        setErrorCategories(null);
-        const res = await fetch(`${config.BASE_URL}/api/restaurant/admin`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-        });
-        if (!res.ok) {
-          throw new Error("Failed to fetch restaurant categories");
-        }
-        const data = await res.json();
-        if (data.restaurant && Array.isArray(data.restaurant.categories)) {
-          setRestaurantCategories(data.restaurant.categories.sort());
-        } else {
-          setRestaurantCategories([]);
-          console.warn("No categories found in restaurant data.");
-        }
-      } catch (err) {
-        console.error("Error fetching categories:", err);
-        setErrorCategories(`Could not load categories: ${err.message}`);
-      } finally {
-        setLoadingCategories(false);
-      }
-    };
-    fetchRestaurantCategories();
-  }, [token]);
-
-  // --- CRUD Handlers (from Menu.js) ---
+  // --- CRUD Handlers with RTK ---
   const handleDelete = (id, name) => {
     setDeleteConfirm({ id, name });
   };
@@ -167,16 +112,11 @@ const Menu = () => {
   const confirmDelete = async () => {
     if (!deleteConfirm) return;
     try {
-      const res = await fetch(`${API_URL}/${deleteConfirm.id}`, {
-        method: "DELETE",
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-      });
-      if (!res.ok) throw new Error("Failed to delete item");
-      setItems(items.filter((item) => item._id !== deleteConfirm.id));
+      await deleteMenuItem(deleteConfirm.id).unwrap();
       showNotification("Item deleted successfully!", "success");
       setDeleteConfirm(null);
     } catch (err) {
-      showNotification(err.message, "error");
+      showNotification(err?.data?.message || "Failed to delete item", "error");
       setDeleteConfirm(null);
     }
   };
@@ -192,38 +132,36 @@ const Menu = () => {
       showNotification("Please select a category for the item.", "error");
       return;
     }
+
     try {
-      let body;
-      let headers = { Authorization: token ? `Bearer ${token}` : "" };
+      let updateData;
+      
       if (editingItem.image instanceof File) {
-        body = new FormData();
-        body.append("name", editingItem.name);
-        body.append("category", editingItem.category);
-        body.append("type", editingItem.type);
-        body.append("price", editingItem.price);
-        body.append("description", editingItem.description);
-        body.append("available", editingItem.available);
-        body.append("file", editingItem.image);
+        // Handle file upload with FormData
+        const formData = new FormData();
+        formData.append("name", editingItem.name);
+        formData.append("category", editingItem.category);
+        formData.append("type", editingItem.type);
+        formData.append("price", editingItem.price);
+        formData.append("description", editingItem.description);
+        formData.append("available", editingItem.available);
+        formData.append("file", editingItem.image);
+        updateData = formData;
       } else {
-        headers["Content-Type"] = "application/json";
+        // Handle regular data update
         const { image, ...itemData } = editingItem;
-        body = JSON.stringify(itemData);
+        updateData = itemData;
       }
-      const res = await fetch(`${API_URL}/${editingItem._id}`, {
-        method: "PUT",
-        headers,
-        body,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to update item");
-      const updatedItem = data.item || data;
-      setItems((prev) =>
-        prev.map((i) => (i._id === updatedItem._id ? updatedItem : i))
-      );
+
+      await updateMenuItem({ 
+        itemId: editingItem._id, 
+        updatedData: updateData 
+      }).unwrap();
+      
       setEditingItem(null);
       showNotification("Item updated successfully!", "success");
     } catch (err) {
-      showNotification(err.message, "error");
+      showNotification(err?.data?.message || "Failed to update item", "error");
     }
   };
 
@@ -231,7 +169,7 @@ const Menu = () => {
     setFilters(newFilters);
   };
 
-  // --- NEW: Add Item Modal Handlers (from AddItems.js) ---
+  // --- Add Item Modal Handlers ---
   const handleAddFormChange = (e) => {
     const { name, value, type, checked } = e.target;
     setAddFormData((prev) => ({
@@ -245,6 +183,7 @@ const Menu = () => {
     setAddFileError("");
     setAddFile(null);
     if (!selectedFile) return;
+    
     const fileSizeInKB = selectedFile.size / 1024;
     if (fileSizeInKB > 300) {
       setAddFileError(
@@ -253,6 +192,7 @@ const Menu = () => {
       e.target.value = "";
       return;
     }
+    
     const allowedTypes = [
       "image/jpeg",
       "image/jpg",
@@ -273,7 +213,8 @@ const Menu = () => {
 
   const handleAddItemSubmit = async (e) => {
     e.preventDefault();
-    // Basic validation checks
+    
+    // Validation
     if (!addFormData.category) {
       showNotification("Please select a category", "error");
       return;
@@ -290,13 +231,8 @@ const Menu = () => {
       showNotification(addFileError, "error");
       return;
     }
-    if (!token) {
-      showNotification("Please login to add products", "error");
-      return;
-    }
 
     try {
-      setIsAddingItem(true);
       const submitData = new FormData();
       submitData.append("name", addFormData.name.trim());
       submitData.append("description", addFormData.description.trim());
@@ -306,46 +242,12 @@ const Menu = () => {
       submitData.append("available", addFormData.available);
       submitData.append("file", addFile);
 
-      const res = await fetch(`${config.BASE_URL}/api/menu/`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: submitData,
-      });
-
-      // Robust response handling from AddItems
-      let result;
-      const responseText = await res.text();
-      try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        if (!res.ok) {
-          throw new Error(
-            `Server Error (${res.status}): ${res.statusText}. Response was not valid JSON.`
-          );
-        }
-        result = { message: "Product added successfully!" }; // Fallback
-      }
-
-      if (!res.ok) {
-        throw new Error(result?.message || `API Error (${res.status})`);
-      }
-
-      // --- CRITICAL: Update Menu state ---
-      const newItem = result.item || result; // Use same logic as handleUpdate
-
-      // 1. Add new item to the main 'items' state (prepend it)
-      setItems((prev) => [newItem, ...prev]);
-
-      // 2. Show success notification (using Menu.js's function)
-      showNotification(
-        result.message || "Product added successfully!",
-        "success"
-      );
-
-      // 3. Close the modal
+      await createMenuItem(submitData).unwrap();
+      
+      showNotification("Product added successfully!", "success");
       setIsAddModalOpen(false);
-
-      // 4. Reset form state
+      
+      // Reset form
       setAddFormData({
         name: "",
         description: "",
@@ -358,26 +260,26 @@ const Menu = () => {
       setAddFileError("");
       const fileInput = document.getElementById("add-product-image-modal");
       if (fileInput) fileInput.value = "";
-    } catch (error) {
-      console.error("Submission error:", error);
-      let errorMessage = "An unexpected error occurred. Please try again.";
-      if (error.message.includes("Failed to fetch")) {
-        errorMessage = "Network error. Please check connection.";
-      } else if (
-        error.message.includes("API Error") ||
-        error.message.includes("Server Error")
-      ) {
-        errorMessage = error.message;
-      }
-      // Use Menu.js's notification system
+    } catch (err) {
+      console.error("Submission error:", err);
+      const errorMessage = err?.data?.message || "An unexpected error occurred. Please try again.";
       showNotification(errorMessage, "error");
-    } finally {
-      setIsAddingItem(false);
     }
   };
-  // --- END: Add Item Modal Handlers ---
 
-  // --- Filtering Logic (from Menu.js) ---
+  // Click outside handler for dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        // Remove this line if setShowDatePicker doesn't exist
+        // setShowDatePicker(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // --- Filtering Logic ---
   const filteredItems = items.filter((item) => {
     const searchLower = filters.search.toLowerCase();
     const matchesSearch =
@@ -396,10 +298,9 @@ const Menu = () => {
     );
   });
 
-  // --- JSX ---
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-4 relative">
-      {/* Big Modal Notification (Used by all functions) */}
+      {/* Big Modal Notification */}
       <AnimatePresence>
         {notification.show && (
           <motion.div
@@ -480,9 +381,10 @@ const Menu = () => {
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="w-full bg-red-600 text-white py-3 px-6 rounded-xl text-lg font-semibold shadow-sm hover:bg-red-700 transition-colors"
+                  disabled={isDeleting}
+                  className="w-full bg-red-600 text-white py-3 px-6 rounded-xl text-lg font-semibold shadow-sm hover:bg-red-700 transition-colors disabled:opacity-50"
                 >
-                  Delete
+                  {isDeleting ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </motion.div>
@@ -490,7 +392,7 @@ const Menu = () => {
         )}
       </AnimatePresence>
 
-      {/* --- NEW: Add Item Modal (from AddItems.js) --- */}
+      {/* Add Item Modal */}
       <AnimatePresence>
         {isAddModalOpen && (
           <motion.div
@@ -507,7 +409,6 @@ const Menu = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="max-h-[90vh] overflow-y-auto rounded-[14px] bg-white">
-                {/* We use the form from AddItems.js directly */}
                 <motion.form
                   onSubmit={handleAddItemSubmit}
                   className="p-6 sm:p-8"
@@ -568,49 +469,36 @@ const Menu = () => {
                       </div>
                     </div>
 
-                    {/* Row 2: Category (Dropdown) + Type */}
+                    {/* Row 2: Category + Type */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                           Category
                         </label>
-                        {/* --- Category Dropdown Logic (Now uses Menu.js state) --- */}
-                        {loadingCategories && (
-                          <div className="w-full border border-gray-300 rounded-lg p-3 bg-gray-100 text-sm text-gray-500">
-                            Loading categories...
-                          </div>
-                        )}
-                        {errorCategories && (
-                          <div className="w-full border border-red-300 rounded-lg p-3 bg-red-50 text-sm text-red-600">
-                            {errorCategories}
-                          </div>
-                        )}
-                        {!loadingCategories && !errorCategories && (
-                          <select
-                            name="category"
-                            value={addFormData.category}
-                            onChange={handleAddFormChange}
-                            required
-                            className={`w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white text-sm ${
-                              !addFormData.category
-                                ? "text-gray-400"
-                                : "text-gray-900"
-                            }`}
-                          >
-                            <option value="" disabled>
-                              Select a Category
-                            </option>
-                            {restaurantCategories.length === 0 ? (
-                              <option disabled>No categories found</option>
-                            ) : (
-                              restaurantCategories.map((category) => (
-                                <option key={category} value={category}>
-                                  {category}
-                                </option>
-                              ))
-                            )}
-                          </select>
-                        )}
+                        <select
+                          name="category"
+                          value={addFormData.category}
+                          onChange={handleAddFormChange}
+                          required
+                          className={`w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white text-sm ${
+                            !addFormData.category
+                              ? "text-gray-400"
+                              : "text-gray-900"
+                          }`}
+                        >
+                          <option value="" disabled>
+                            Select a Category
+                          </option>
+                          {restaurantCategories.length === 0 ? (
+                            <option disabled>No categories found</option>
+                          ) : (
+                            restaurantCategories.map((category) => (
+                              <option key={category} value={category}>
+                                {category}
+                              </option>
+                            ))
+                          )}
+                        </select>
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -654,7 +542,6 @@ const Menu = () => {
                             accept=".jpeg,.jpg,.png,.gif,.webp,.avif,image/*"
                           />
                           <div className="flex flex-col items-center justify-center gap-2 text-gray-600">
-                            {/* <PhotoIcon className="w-10 h-10 mb-2 text-gray-400" /> */}
                             <p className="font-medium text-sm">
                               {addFile ? addFile.name : "Click to upload image"}
                             </p>
@@ -723,7 +610,6 @@ const Menu = () => {
                       disabled={
                         isAddingItem ||
                         !!addFileError ||
-                        loadingCategories ||
                         !addFormData.category ||
                         !addFormData.type
                       }
@@ -749,19 +635,17 @@ const Menu = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* --- END: Add Item Modal --- */}
 
       <div>
         {/* Header */}
         <div className="mb-6">
-          {/* <div className="flex justify-between items-center p-2 shadow-md"> */}
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-800">🍔 Manage Menu</h2>
-            {/* </div> */}
           </div>
         </div>
+        
+        {/* Add Item Button */}
         <div className="fixed bottom-10 right-6 z-20">
-          {/* --- MODIFIED: This button now opens the Add Item Modal --- */}
           <Button
             variant="outline"
             className="bg-green-600 rounded-full text-white hover:bg-green-800 h-16 w-16"
@@ -770,22 +654,22 @@ const Menu = () => {
             <CirclePlus size={20} />
           </Button>
         </div>
-        {/* --- Filter Component --- */}
+        
+        {/* Filter Component */}
         <div className="my-6">
           <MenuFilter
             onFilterChange={handleFilterChange}
-            // Pass the categories fetched by Menu.js
             categories={restaurantCategories}
           />
         </div>
 
         {/* Loader & Error */}
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center items-center py-16">
             <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : error ? (
-          <p className="text-center text-red-500">{error}</p>
+          <p className="text-center text-red-500">{error?.data?.message || error?.message}</p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             <AnimatePresence>
@@ -858,7 +742,7 @@ const Menu = () => {
         )}
 
         {/* No items found message */}
-        {!loading && !error && filteredItems.length === 0 && (
+        {!isLoading && !error && filteredItems.length === 0 && (
           <div className="text-center py-16">
             <h3 className="text-2xl font-semibold text-gray-700">
               No Items Found
@@ -869,7 +753,7 @@ const Menu = () => {
           </div>
         )}
 
-        {/* Edit Modal (Original from Menu.js) */}
+        {/* Edit Modal */}
         <AnimatePresence>
           {editingItem && (
             <motion.div
@@ -910,7 +794,6 @@ const Menu = () => {
                       className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-orange-500 outline-none appearance-none"
                     >
                       <option value="">Select a Category</option>
-                      {/* Use the same master category list */}
                       {restaurantCategories.map((cat) => (
                         <option key={cat} value={cat}>
                           {cat}
@@ -1002,9 +885,10 @@ const Menu = () => {
                     </button>
                     <button
                       type="submit"
-                      className="px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition font-semibold"
+                      disabled={isUpdating}
+                      className="px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition font-semibold disabled:opacity-50"
                     >
-                      Save Changes
+                      {isUpdating ? "Saving..." : "Save Changes"}
                     </button>
                   </div>
                 </form>

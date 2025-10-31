@@ -8,12 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Form } from "@/components/ui/form"
 import { Loader2 } from "lucide-react"
 import { NotificationModal } from "../../common/notificationModal"
-import config from "@/config"
 import { PersonalInfoSection } from "./Personal_info_section"
 import { RestaurantInfoSection } from "./Restaurant-info-section"
 import { RoleSection } from "./Role_section"
+import { useRegisterUserMutation } from "@/redux/superAdminRedux/superAdminAPI"
 
-// Updated schema with all roles
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
@@ -36,9 +35,6 @@ const registerSchema = z.object({
 })
 
 export function RegisterUserForm() {
-  const [loading, setLoading] = useState(false)
-  const [notification, setNotification] = useState({ show: false, message: "", type: "" })
-
   const form = useForm({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -52,6 +48,10 @@ export function RegisterUserForm() {
   })
 
   const selectedRole = form.watch("role")
+  const [notification, setNotification] = useState({ show: false, message: "", type: "" })
+
+  // ✅ RTK Query mutation hook
+  const [registerUser, { isLoading }] = useRegisterUserMutation()
 
   const showNotification = (message, type = "success") => {
     setNotification({ show: true, message, type })
@@ -62,60 +62,35 @@ export function RegisterUserForm() {
   }
 
   const onSubmit = async (values) => {
-    setLoading(true)
     try {
-      const response = await fetch(`${config.BASE_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values)
-      })
+      const data = await registerUser(values).unwrap()
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        // Handle duplicate domain error
-        if (data.message && data.message.includes('domain')) {
-          form.setError('domain', {
-            type: 'manual',
-            message: 'Domain already exists. Please choose a different one.'
-          })
-          throw new Error(data.message)
-        }
-        throw new Error(data.message || 'Registration failed')
-      }
-
-      // Show appropriate success message based on role
+      // Success message based on role
       let successMessage = "";
       switch (values.role) {
         case "admin":
-          successMessage = `Admin ${data.user.name} has been created with restaurant ${data.restaurant?.restaurantName}`;
+          successMessage = `Admin ${data.user.name} created successfully with restaurant ${data.restaurant?.restaurantName}`;
           break;
         case "staff":
-          successMessage = `Staff ${data.user.name} has been registered successfully`;
+          successMessage = `Staff ${data.user.name} registered successfully`;
           break;
         case "superadmin":
-          successMessage = `Superadmin ${data.user.name} has been created successfully`;
-          break;
-        case "user":
-          successMessage = `User ${data.user.name} has been created successfully`;
+          successMessage = `Superadmin ${data.user.name} created successfully`;
           break;
         default:
-          successMessage = `User ${data.user.name} has been created successfully`;
+          successMessage = `User ${data.user.name} registered successfully`;
       }
 
       showNotification(successMessage, "success")
       form.reset()
     } catch (error) {
-      showNotification(error.message, "error")
-    } finally {
-      setLoading(false)
+      showNotification(error.message || "Registration failed", "error")
     }
   }
 
   return (
     <>
       <NotificationModal notification={notification} onClose={closeNotification} />
-      
       <div className="w-full max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-gray-900">Register New User</h2>
@@ -126,20 +101,12 @@ export function RegisterUserForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <PersonalInfoSection form={form} />
             <RoleSection form={form} />
-            
-            {/* Show restaurant fields only when admin role is selected */}
-            {selectedRole === "admin" && (
-              <RestaurantInfoSection form={form} />
-            )}
+
+            {selectedRole === "admin" && <RestaurantInfoSection form={form} />}
 
             <div className="flex justify-center">
-              <Button 
-                type="submit" 
-                className="w-auto min-w-[200px]" 
-                disabled={loading} 
-                size="lg"
-              >
-                {loading ? (
+              <Button type="submit" disabled={isLoading} size="lg" className="w-auto min-w-[200px]">
+                {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Creating {selectedRole || "User"}...

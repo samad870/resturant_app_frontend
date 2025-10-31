@@ -1,40 +1,57 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useState, useCallback } from "react";
-// eslint-disable-next-line no-unused-vars
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import OrdersTable from "./OrdersTable";
 import EditOrderModal from "./EditOrderModal";
 import DeleteModal from "./DeleteModal";
-import ItemsModal from "./ItemsModal"; // This is the Bill Modal
-import config from "../../../config";
-import { SlRefresh } from "react-icons/sl"; // ✅ 1. ADDED IMPORT
+import ItemsModal from "./ItemsModal";
+import { SlRefresh } from "react-icons/sl";
+import { 
+  useGetOrdersQuery,
+  useUpdateOrderMutation,
+  useDeleteOrderMutation,
+  useGetRestaurantProfileQuery 
+} from "@/redux/adminRedux/adminAPI";
+import { useGetMenuQuery } from "@/redux/clientRedux/clientAPI";
 
 const Orders = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [editingOrder, setEditingOrder] = useState(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(null);
-  const [orderForBillModal, setOrderForBillModal] = useState(null); 
-  const [menuItems, setMenuItems] = useState([]);
-  const [restaurantDetails, setRestaurantDetails] = useState(null);
+  const [orderForBillModal, setOrderForBillModal] = useState(null);
   const [notification, setNotification] = useState({
     show: false,
     message: "",
     type: "",
   });
 
-  // ✅ State from PendingOrders
+  // Auto-refresh state
   const [lastUpdated, setLastUpdated] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(
     localStorage.getItem("autoRefresh") || "OFF"
   );
   const [autoRefreshInterval, setAutoRefreshInterval] = useState(null);
 
+  // RTK Queries and Mutations
+  const { 
+    data: ordersData, 
+    isLoading: ordersLoading, 
+    error: ordersError,
+    refetch: refetchOrders 
+  } = useGetOrdersQuery();
 
+  const { 
+    data: restaurantData, 
+    isLoading: restaurantLoading,
+    error: restaurantError 
+  } = useGetRestaurantProfileQuery();
 
-  const token = localStorage.getItem("token") || "";
-  const API_URL = `${config.BASE_URL}/api/order`;
+  const { 
+    data: menuData, 
+    isLoading: menuLoading,
+    error: menuError 
+  } = useGetMenuQuery();
+
+  const [updateOrder, { isLoading: isUpdating }] = useUpdateOrderMutation();
+  const [deleteOrder, { isLoading: isDeleting }] = useDeleteOrderMutation();
 
   const showNotification = (message, type = "success") => {
     setNotification({ show: true, message, type });
@@ -47,135 +64,45 @@ const Orders = () => {
   const closeNotification = () =>
     setNotification({ show: false, message: "", type: "" });
 
-  const fetchRestaurantDetails = useCallback(async () => {
-    if (!token) return; 
+  // Handle update order with RTK
+  const handleUpdateOrder = async (orderId, updatedData) => {
     try {
-      const res = await fetch(`${config.BASE_URL}/api/restaurant/admin`, {
-      headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-      });
-      if (!res.ok) throw new Error("Failed to fetch restaurant details");
-      
-      const data = await res.json();
-      
-      if (data.restaurant) {
-        setRestaurantDetails(data.restaurant); 
-      } else {
-        throw new Error("Restaurant data not found in response");
-      }
-    } catch (err) {
-      console.error(err);
-      showNotification("Could not load restaurant details for bills", "error");
-    }
-  }, [token]);
-
-  const fetchOrders = useCallback(async () => {
-    if (!token)
-      return showNotification("No token found. Please login first", "error");
-    try {
-      setLoading(true);
-      const res = await fetch(API_URL, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to fetch orders");
-      const data = await res.json();
-      if (!Array.isArray(data)) throw new Error("Invalid data format from API");
-      setOrders(data.reverse());
-      setLastUpdated(new Date()); // Already here, perfect
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-      showNotification("Failed to fetch orders", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [token, API_URL]);
-
-  const fetchMenuItems = useCallback(async () => {
-    if (!token) return;
-    try {
-      const res = await fetch(`${config.BASE_URL}/api/menu`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to fetch menu items");
-      const data = await res.json();
-      const items = Array.isArray(data) ? data : data.menu || data.data || [];
-      if (!Array.isArray(items)) throw new Error("Invalid menu data");
-      setMenuItems(items);
-    } catch (err) {
-      console.error(err);
-      setMenuItems([]);
-      showNotification("Failed to fetch menu items", "error");
-    }
-  }, [token]);
-
- const updateOrder = async (orderId, updatedData) => {
-    try {
-      const res = await fetch(`${API_URL}/${orderId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(updatedData),
-      });
-      if (!res.ok) throw new Error("Failed to update order");
-      await fetchOrders(); // This fetches new orders, which will trigger the sync effect
+      await updateOrder({ orderId, updatedData }).unwrap();
       setEditingOrder(null);
       showNotification("Order updated successfully!", "success");
     } catch (err) {
-      console.error(err);
-      showNotification(err.message, "error");
+      showNotification(err?.data?.message || "Failed to update order", "error");
     }
   };
-  useEffect(() => {
-    
-    if (orderForBillModal) {
-      
-      const updatedOrder = orders.find(
-        (o) => o._id === orderForBillModal._id
-      );
 
-      if (updatedOrder) {
-       
-        setOrderForBillModal(updatedOrder);
-      } else {
-        
-        setOrderForBillModal(null);
-      }
-    }
-   
-  }, [orders]);
-
-  // ✅ 2. FILLED IN deleteOrder (copied from PendingOrders)
-  const deleteOrder = async (orderId) => {
+  // Handle delete order with RTK
+  const handleDeleteOrder = async (orderId) => {
     try {
-      const res = await fetch(`${API_URL}/${orderId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to delete order");
-      await fetchOrders();
+      await deleteOrder(orderId).unwrap();
       setShowConfirmDelete(null);
       showNotification("Order deleted successfully!", "success");
     } catch (err) {
-      console.error(err);
-      showNotification(err.message, "error");
+      showNotification(err?.data?.message || "Failed to delete order", "error");
     }
   };
 
-  // ✅ 3. ADDED REFRESH HANDLERS (copied from PendingOrders)
+  // Auto-refresh functions
   const handleManualRefresh = async () => {
-    await fetchOrders();
+    try {
+      await refetchOrders();
+      setLastUpdated(new Date());
+      showNotification("Orders refreshed!", "success");
+    } catch (err) {
+      showNotification("Failed to refresh orders", "error");
+    }
   };
 
   const startAutoRefresh = (minutes) => {
     if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     const id = setInterval(() => {
       console.log("🔁 Auto-refresh triggered");
-      fetchOrders();
+      refetchOrders();
+      setLastUpdated(new Date());
     }, minutes * 60 * 1000);
     setAutoRefreshInterval(id);
     localStorage.setItem("autoRefresh", `${minutes} min`);
@@ -188,19 +115,28 @@ const Orders = () => {
     localStorage.setItem("autoRefresh", "OFF");
   };
 
-  // Main useEffect (unchanged, still fetches restaurantDetails)
+  // Sync orderForBillModal with latest orders data
   useEffect(() => {
-    if (!token) {
-      showNotification("No token found. Please login first", "error");
-      setLoading(false);
-      return;
+    if (orderForBillModal) {
+      const updatedOrder = ordersData?.find(
+        (o) => o._id === orderForBillModal._id
+      );
+      if (updatedOrder) {
+        setOrderForBillModal(updatedOrder);
+      } else {
+        setOrderForBillModal(null);
+      }
     }
-    fetchOrders();
-    fetchMenuItems();
-    fetchRestaurantDetails(); // 👈 Your logic is preserved
-  }, [token, fetchOrders, fetchMenuItems, fetchRestaurantDetails]);
+  }, [ordersData, orderForBillModal]);
 
-  // ✅ 4. ADDED Auto-Refresh Persistence useEffect (copied from PendingOrders)
+  // Set last updated when orders load
+  useEffect(() => {
+    if (ordersData && !ordersLoading) {
+      setLastUpdated(new Date());
+    }
+  }, [ordersData, ordersLoading]);
+
+  // Auto-refresh persistence
   useEffect(() => {
     const saved = localStorage.getItem("autoRefresh");
     if (saved && saved !== "OFF") {
@@ -213,14 +149,22 @@ const Orders = () => {
     return () => {
       if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     };
-  }, []); // Runs once on mount
+  }, []);
 
+  // Process data from RTK queries
+  const orders = ordersData || [];
+  const menuItems = Array.isArray(menuData) ? menuData : menuData?.menu || menuData?.data || [];
+  const restaurantDetails = restaurantData?.restaurant || null;
+
+  const loading = ordersLoading || restaurantLoading || menuLoading;
+  const error = ordersError || restaurantError || menuError;
+
+  // Filter pending orders
   const pendingOrders = orders.filter((o) => o.status === "pending");
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8 relative">
-      
-      {/* ✅ 5. ADDED Notification Modal JSX (copied from PendingOrders) */}
+      {/* Notification Modal */}
       <AnimatePresence>
         {notification.show && (
           <motion.div
@@ -284,7 +228,7 @@ const Orders = () => {
         )}
       </AnimatePresence>
       
-      {/* ✅ 6. ADDED Header/Buttons JSX (copied from PendingOrders) */}
+      {/* Header with Refresh Controls */}
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-row items-center justify-between mb-6 gap-3">
           <h2 className="text-xl sm:text-3xl font-bold text-gray-900 whitespace-nowrap">⏳ Pending</h2>
@@ -293,10 +237,13 @@ const Orders = () => {
             {/* Refresh Button */}
             <button
               onClick={handleManualRefresh}
-              className="p-2 sm:px-3 sm:py-2 bg-orange-500 text-white font-normal rounded-xl hover:bg-orange-600 transition flex items-center gap-1 sm:gap-2"
+              disabled={ordersLoading}
+              className="p-2 sm:px-3 sm:py-2 bg-orange-500 text-white font-normal rounded-xl hover:bg-orange-600 transition flex items-center gap-1 sm:gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <SlRefresh className="text-sm sm:text-base" />
-              <span className="hidden xs:inline text-xs sm:text-sm">Refresh</span>
+              <SlRefresh className={`text-sm sm:text-base ${ordersLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden xs:inline text-xs sm:text-sm">
+                {ordersLoading ? 'Refreshing...' : 'Refresh'}
+              </span>
             </button>
 
             {/* Auto Refresh Dropdown */}
@@ -337,20 +284,20 @@ const Orders = () => {
         <OrdersTable
           orders={pendingOrders}
           loading={loading}
-          error={error}
+          error={error?.data?.message || error?.message}
           setEditingOrder={setEditingOrder}
           setShowConfirmDelete={setShowConfirmDelete}
-          setOrderForBillModal={setOrderForBillModal} 
-          updateOrder={updateOrder}
-          tableType="pending" // ✅ 7. Added tableType prop
+          setOrderForBillModal={setOrderForBillModal}
+          updateOrder={handleUpdateOrder}
+          tableType="pending"
         />
       </div>
 
-      {/* Modals (Unchanged) */}
+      {/* Modals */}
       {orderForBillModal && ( 
         <ItemsModal
           order={orderForBillModal}
-          restaurantDetails={restaurantDetails} // 👈 Your prop is preserved
+          restaurantDetails={restaurantDetails}
           onClose={() => setOrderForBillModal(null)}
         />
       )}
@@ -358,19 +305,21 @@ const Orders = () => {
         <EditOrderModal
           editingOrder={editingOrder}
           setEditingOrder={setEditingOrder}
-          updateOrder={updateOrder}
+          updateOrder={handleUpdateOrder}
           menuItems={menuItems}
+          isUpdating={isUpdating}
         />
       )}
       {showConfirmDelete && (
         <DeleteModal
           order={showConfirmDelete}
           onCancel={() => setShowConfirmDelete(null)}
-          onDelete={() => deleteOrder(showConfirmDelete._id)}
+          onDelete={() => handleDeleteOrder(showConfirmDelete._id)}
+          isDeleting={isDeleting}
         />
       )}
     </div>
   );
 };
 
-export default Orders
+export default Orders;

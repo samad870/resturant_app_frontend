@@ -1,103 +1,148 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import OrdersTable from "./OrdersTable";
 import EditOrderModal from "./EditOrderModal";
 import DeleteModal from "./DeleteModal";
 import ItemsModal from "./ItemsModal";
-import config from "../../../config";
+import { SlRefresh } from "react-icons/sl";
+import { 
+  useGetOrdersQuery,
+  useUpdateOrderMutation,
+  useDeleteOrderMutation 
+} from "@/redux/adminRedux/adminAPI";
+import { useGetMenuQuery } from "@/redux/clientRedux/clientAPI";
 
 const OrdersList = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [editingOrder, setEditingOrder] = useState(null);
   const [showConfirmDelete, setShowConfirmDelete] = useState(null);
-  const [menuItems, setMenuItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState(null);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
 
-  const API_URL = `${config.BASE_URL}/api/order`;
+  // RTK Queries and Mutations
+  const { 
+    data: ordersData, 
+    isLoading: ordersLoading, 
+    error: ordersError,
+    refetch: refetchOrders 
+  } = useGetOrdersQuery(undefined, {
+    pollingInterval: autoRefreshEnabled ? 2000 : 0,
+  });
 
-  const fetchOrders = async () => {
+  const { 
+    data: menuData, 
+    isLoading: menuLoading,
+    error: menuError 
+  } = useGetMenuQuery();
+
+  const [updateOrder, { isLoading: isUpdating }] = useUpdateOrderMutation();
+  const [deleteOrder, { isLoading: isDeleting }] = useDeleteOrderMutation();
+
+  // Handle manual refresh
+  const handleManualRefresh = async () => {
     try {
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error("Failed to fetch orders");
-      const data = await res.json();
-
-      // ✅ Just reverse orders, no order number logic
-      setOrders(data.reverse());
+      await refetchOrders();
+      setLastRefreshed(new Date());
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      console.error("Failed to refresh orders:", err);
     }
   };
 
-  const fetchMenuItems = async () => {
+  // Handle update order with RTK
+  const handleUpdateOrder = async (orderId, updatedData) => {
     try {
-      const res = await fetch(`${config.BASE_URL}/api/menu`);
-      if (!res.ok) throw new Error("Failed to fetch menu items");
-      const data = await res.json();
-      setMenuItems(data);
-    } catch (err) {
-      console.error(err.message);
-    }
-  };
-
-  const updateOrder = async (orderId, updatedData) => {
-    try {
-      const res = await fetch(`${API_URL}/${orderId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedData),
-      });
-      if (!res.ok) throw new Error("Failed to update order");
-      fetchOrders();
+      await updateOrder({ orderId, updatedData }).unwrap();
       setEditingOrder(null);
     } catch (err) {
-      alert(err.message);
+      alert(err?.data?.message || "Failed to update order");
     }
   };
 
-  const deleteOrder = async (orderId) => {
+  // Handle delete order with RTK
+  const handleDeleteOrder = async (orderId) => {
     try {
-      const res = await fetch(`${API_URL}/${orderId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete order");
-      fetchOrders();
+      await deleteOrder(orderId).unwrap();
       setShowConfirmDelete(null);
     } catch (err) {
-      alert(err.message);
+      alert(err?.data?.message || "Failed to delete order");
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-    fetchMenuItems();
+  // Process data from RTK queries
+  const orders = ordersData ? [...ordersData].reverse() : [];
+  const menuItems = Array.isArray(menuData) ? menuData : menuData?.menu || menuData?.data || [];
 
-    const interval = setInterval(fetchOrders, 2000);
-    return () => clearInterval(interval);
-    
-  }, []);
+  const loading = ordersLoading || menuLoading;
+  const error = ordersError || menuError;
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6 text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Orders Dashboard</h2>
-          <p className="text-gray-500 text-sm mt-1">
-            Showing {orders.length} Order{orders.length !== 1 && "s"}
-          </p>
+        <div className="mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-center sm:text-left">
+              <h2 className="text-3xl font-bold text-gray-900">Orders Dashboard</h2>
+              <p className="text-gray-500 text-sm mt-1">
+                Showing {orders.length} Order{orders.length !== 1 && "s"}
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {/* Auto Refresh Toggle */}
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoRefreshEnabled}
+                    onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
+                    className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500"
+                  />
+                  Auto Refresh
+                </label>
+              </div>
+
+              {/* Manual Refresh Button */}
+              <button
+                onClick={handleManualRefresh}
+                disabled={ordersLoading}
+                className="flex items-center gap-2 px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <SlRefresh className={`w-4 h-4 ${ordersLoading ? 'animate-spin' : ''}`} />
+                <span className="text-sm">
+                  {ordersLoading ? 'Refreshing...' : 'Refresh'}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Status Indicators */}
+          <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-500">
+            {autoRefreshEnabled && (
+              <span className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                Auto-refresh enabled (2s)
+              </span>
+            )}
+            {lastRefreshed && (
+              <span>Last manual refresh: {lastRefreshed.toLocaleTimeString()}</span>
+            )}
+            {ordersLoading && (
+              <span className="text-orange-500">🔄 Refreshing orders...</span>
+            )}
+          </div>
         </div>
 
         <OrdersTable
           orders={orders}
           loading={loading}
-          error={error}
-          updateOrder={updateOrder}
+          error={error?.data?.message || error?.message}
+          updateOrder={handleUpdateOrder}
           setEditingOrder={setEditingOrder}
           setShowConfirmDelete={setShowConfirmDelete}
           setSelectedItems={setSelectedItems}
         />
       </div>
 
+      {/* Modals */}
       {selectedItems && (
         <ItemsModal
           order={selectedItems}
@@ -109,8 +154,9 @@ const OrdersList = () => {
         <EditOrderModal
           editingOrder={editingOrder}
           setEditingOrder={setEditingOrder}
-          updateOrder={updateOrder}
+          updateOrder={handleUpdateOrder}
           menuItems={menuItems}
+          isUpdating={isUpdating}
         />
       )}
 
@@ -118,7 +164,8 @@ const OrdersList = () => {
         <DeleteModal
           order={showConfirmDelete}
           onCancel={() => setShowConfirmDelete(null)}
-          onDelete={() => deleteOrder(showConfirmDelete._id)}
+          onDelete={() => handleDeleteOrder(showConfirmDelete._id)}
+          isDeleting={isDeleting}
         />
       )}
     </div>

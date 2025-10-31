@@ -7,18 +7,15 @@ import {
   PhotoIcon,
   TagIcon,
   QrCodeIcon,
-  CheckCircleIcon, // Added import
-  XCircleIcon, // Added import
-  ExclamationTriangleIcon, // Added import
+  CheckCircleIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
-// eslint-disable-next-line no-unused-vars
-import { motion, AnimatePresence } from "framer-motion"; // Added import
-import config from "@/config";
+import { motion, AnimatePresence } from "framer-motion";
+import { useGetRestaurantProfileQuery, useUpdateRestaurantProfileMutation } from "@/redux/adminRedux/adminAPI";
+// import config from "@/config";
 
-// --- Reusable UI Components (from UpdateProfile) ---
-
-// Form Card
+// --- Reusable UI Components ---
 const FormCard = ({ title, icon, children, customIndex }) => (
   <motion.div
     className="bg-white rounded-2xl shadow-lg border border-gray-200"
@@ -44,21 +41,6 @@ const FormCard = ({ title, icon, children, customIndex }) => (
   </motion.div>
 );
 
-// Read-only field
-const DisabledFormField = ({ label, value }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-      {label}
-    </label>
-    <div className="flex items-center w-full bg-gray-100 border border-gray-200 rounded-xl p-3 cursor-not-allowed">
-      <span className="text-gray-800 font-medium truncate">
-        {value || "N/A"}
-      </span>
-    </div>
-  </div>
-);
-
-// Standard editable form field
 const FormField = ({
   label,
   name,
@@ -78,7 +60,7 @@ const FormField = ({
       value={value}
       onChange={onChange}
       min={min}
-      className="w-full border border-gray-300 rounded-xl p-2.5 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all" // CHANGED: p-3 to p-2.5
+      className="w-full border border-gray-300 rounded-xl p-2.5 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
       placeholder={placeholder}
     />
   </div>
@@ -103,8 +85,7 @@ const modalContentVariant = {
   exit: { opacity: 0, scale: 0.8 },
 };
 
-// --- Reusable Sub-Components (from Profile) ---
-
+// --- Profile Components ---
 const ProfileField = ({ label, value, icon }) => (
   <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-sm transition-shadow">
     <div className="flex items-center gap-3 mb-3">
@@ -138,27 +119,6 @@ const CategoryChips = ({ categories }) => (
   </div>
 );
 
-// --- Loading and Error Components ---
-const LoadingSpinner = () => (
-  <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-    <div className="flex flex-col items-center gap-3">
-      <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-gray-600">Loading profile...</p>
-    </div>
-  </div>
-);
-
-const ErrorMessage = ({ error }) => (
-  <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-    <div className="bg-white p-8 rounded-2xl shadow-lg border border-red-200 text-center">
-      <h2 className="text-2xl font-bold text-red-600 mb-3">
-        Error Loading Profile
-      </h2>
-      <p className="text-gray-700">{error || "An unknown error occurred."}</p>
-    </div>
-  </div>
-);
-
 // --- Update Profile Modal Component ---
 const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
   const [formData, setFormData] = useState({
@@ -176,7 +136,6 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
   const [file, setFile] = useState(null);
   const [fileError, setFileError] = useState("");
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [notification, setNotification] = useState({
     show: false,
     message: "",
@@ -193,19 +152,19 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
     }
   });
 
-  const [token] = useState(() => localStorage.getItem("token") || "");
+  // RTK Mutation for updating profile
+  const [updateRestaurantProfile, { isLoading: isSubmitting }] = useUpdateRestaurantProfileMutation();
 
   // --- Core Handlers ---
-
   const showNotification = (message, type = "success") => {
     setNotification({ show: true, message, type });
   };
 
   const closeNotification = () => {
-    const notificationType = notification.type; // Store type before clearing
+    const notificationType = notification.type;
     setNotification({ show: false, message: "", type: "" });
     if (notificationType === "success") {
-      onUpdateSuccess(); // This calls the parent's success handler
+      onUpdateSuccess();
     }
   };
 
@@ -268,7 +227,6 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
   };
 
   // --- Category Handlers ---
-
   const handleCategoryKeyDown = (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -297,21 +255,15 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
     setCategories((prev) => prev.filter((cat) => cat !== categoryToRemove));
   }, []);
 
-  // --- Form Submission ---
-
+  // --- Form Submission with RTK ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!token) {
-      showNotification("No token found. Please login first", "error");
-      return;
-    }
     if (fileError) {
       showNotification(fileError, "error");
       return;
     }
 
     try {
-      setIsSubmitting(true);
       const formDataToUpload = new FormData();
 
       // Append all form data fields
@@ -328,27 +280,16 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
         formDataToUpload.append("categories", category);
       });
       if (categories.length === 0) {
-        formDataToUpload.append("categories", ""); // To clear array on backend
+        formDataToUpload.append("categories", "");
       }
 
-      // Using relative path, assuming your API is on the same domain
-      const res = await fetch(`${config.BASE_URL}/api/restaurant/`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formDataToUpload,
-      });
-
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Failed to update");
-
+      // Use RTK Mutation
+      const result = await updateRestaurantProfile(formDataToUpload).unwrap();
+      
       showNotification("Restaurant updated successfully!", "success");
-      // Don't close immediately, let the user click "Done"
-      // onUpdateSuccess() will be called from closeNotification
     } catch (err) {
       console.error("Update error:", err);
-      showNotification(err.message, "error");
-    } finally {
-      setIsSubmitting(false);
+      showNotification(err?.data?.message || "Failed to update restaurant", "error");
     }
   };
 
@@ -359,9 +300,8 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
       animate="visible"
       exit="exit"
       className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 flex items-center justify-center p-4"
-      onClick={onClose} // Close modal on background click
+      onClick={onClose}
     >
-      {/* Notifications Modal (Fixed position ensures it's centered on viewport) */}
       <AnimatePresence>
         {notification.show && (
           <motion.div
@@ -406,18 +346,14 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
         )}
       </AnimatePresence>
 
-      {/* Main Form Modal */}
       <motion.div
         variants={modalContentVariant}
-        className="relative  border-2 border-red-50 mt-10   rounded-3xl shadow-2xl w-full max-w-3xl mx-auto max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()} // Prevent closing on content click
+        className="relative border-2 border-red-50 mt-10 rounded-3xl shadow-2xl w-full max-w-3xl mx-auto max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Main Form Content */}
         <div>
           <div className="w-full max-w-3xl mx-auto space-y-6">
             <motion.form onSubmit={handleSubmit} className="space-y-6 p-2">
-             
-
               <FormCard title="Core Profile" icon="✏️" customIndex={1}>
                 <FormField
                   label="Address"
@@ -446,13 +382,11 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
                   />
                 </div>
 
-                {/* Category Input Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Categories
                   </label>
                   <div className="flex flex-wrap items-center gap-2 w-full border border-gray-300 rounded-xl p-2 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500 transition-all">
-                    {" "}
                     <AnimatePresence>
                       {categories.map((category) => (
                         <motion.span
@@ -550,7 +484,7 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
                           <FormField
                             label="GST Rate (%)"
                             name="gstRate"
-                            type="text" // Keep as text to allow decimal
+                            type="text"
                             value={formData.gstRate}
                             onChange={handleChange}
                             placeholder="e.g. 5"
@@ -562,12 +496,12 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
                 </div>
               </FormCard>
 
-              <FormCard title="Branding"  icon="🖼️" customIndex={3}>
+              <FormCard title="Branding" icon="🖼️" customIndex={3}>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Restaurant Logo
                   </label>
-                  <div className="border-2  border-dashed  rounded-xl p-6 text-center hover:border-orange-400 transition-colors bg-gray-50">
+                  <div className="border-2 border-dashed rounded-xl p-6 text-center hover:border-orange-400 transition-colors bg-gray-50">
                     <input
                       type="file"
                       onChange={handleFileChange}
@@ -603,7 +537,6 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
                 </div>
               </FormCard>
 
-              {/* Form Actions */}
               <motion.div
                 className="flex justify-end gap-4"
                 variants={{
@@ -624,7 +557,7 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
               >
                 <Button
                   type="button"
-                  className="py-2.5 px-6 h-full rounded-xl text-base font-semibold" // CHANGED: Smaller padding/text
+                  className="py-2.5 px-6 h-full rounded-xl text-base font-semibold"
                   variant="outline"
                   onClick={onClose}
                 >
@@ -634,7 +567,7 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
                   type="submit"
                   disabled={isSubmitting || !!fileError}
                   whileTap={{ scale: 0.95 }}
-                  className="bg-orange-500 text-white py-2.5 px-6 rounded-xl text-base font-semibold shadow-sm hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[180px]" // CHANGED: Smaller padding/text/min-width
+                  className="bg-orange-500 text-white py-2.5 px-6 rounded-xl text-base font-semibold shadow-sm hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[180px]"
                 >
                   {isSubmitting ? (
                     <>
@@ -657,110 +590,37 @@ const UpdateProfile = ({ initialData, onClose, onUpdateSuccess }) => {
   );
 };
 
-// --- Main Profile Component ---
-
-const API_URL = `${config.BASE_URL}/api/restaurant`;
-
+// --- Main Profile Component with RTK ---
 const Profile = () => {
-  const [profileData, setProfileData] = useState({
-    name: "",
-    email: "",
-    restaurantName: "",
-    qrCode: "",
-    logoUrl: "",
-    domain: "",
-    address: "",
-    phoneNumber: "",
-    tableNumbers: "",
-    categories: [],
-    gstNumber: "",
-    gstRate: 0,
-    gstEnabled: false,
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [token] = useState(() => localStorage.getItem("token") || "");
-
-  // State to control the update modal
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  // State to trigger a refetch after successful update
-  const [triggerRefetch, setTriggerRefetch] = useState(0);
 
-  useEffect(() => {
-    const fetchAdminDetails = async () => {
-      setLoading(true); // Set loading to true at the start of fetch
-      const localName = localStorage.getItem("userName") || "Admin User";
-      const localEmail =
-        localStorage.getItem("userEmail") || "admin@example.com";
+  // RTK Query for restaurant profile
+  const { 
+    data: restaurantData, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useGetRestaurantProfileQuery();
 
-      if (!token) {
-        setError("No token found. Please log in.");
-        setProfileData((prev) => ({
-          ...prev,
-          name: localName,
-          email: localEmail,
-          restaurantName: "Login required",
-        }));
-        setLoading(false);
-        return;
-      }
+  const localName = localStorage.getItem("userName") || "Admin User";
+  const localEmail = localStorage.getItem("userEmail") || "admin@example.com";
 
-      try {
-        const res = await fetch(`${API_URL}/admin`, {
-         headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-        });
-      
-        if (!res.ok) {
-          throw new Error(
-            `Failed to fetch restaurant details (Status: ${res.status})`
-          );
-        }
-
-        const data = await res.json();
-        console.log("Fetched restaurant data:", data);
-
-        if (data.restaurant) {
-          const r = data.restaurant;
-          setProfileData({
-            name: localName,
-            email: localEmail,
-            restaurantName: r.restaurantName || r.name || "My Restaurant",
-            qrCode: r.qrCode || "",
-            logoUrl: r.logo?.url || "",
-            logo: r.logo, // Pass the whole logo object for public_id
-            domain: r.domain || "N/A",
-            address: r.address || "N/A",
-            phoneNumber: r.phoneNumber || "N/A",
-            tableNumbers: r.tableNumbers || "N/A",
-            categories: r.categories || [],
-            gstNumber: r.gstNumber || "N/A",
-            gstRate: r.gstRate || 0,
-            gstEnabled: r.gstEnabled || false,
-          });
-          setError(null); // Clear any previous error
-        } else {
-          throw new Error("Restaurant data not found in response");
-        }
-      } catch (err) {
-        console.error("Error fetching admin details:", err);
-        setError(err.message);
-        setProfileData((prev) => ({
-          ...prev,
-          name: localName,
-          email: localEmail,
-          restaurantName: "Error Loading Data",
-        }));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAdminDetails();
-  }, [API_URL,token, triggerRefetch]); // Re-fetch when token or triggerRefetch changes
+  const profileData = {
+    name: localName,
+    email: localEmail,
+    restaurantName: restaurantData?.restaurant?.restaurantName || restaurantData?.restaurant?.name || "My Restaurant",
+    qrCode: restaurantData?.restaurant?.qrCode || "",
+    logoUrl: restaurantData?.restaurant?.logo?.url || "",
+    logo: restaurantData?.restaurant?.logo,
+    domain: restaurantData?.restaurant?.domain || "N/A",
+    address: restaurantData?.restaurant?.address || "N/A",
+    phoneNumber: restaurantData?.restaurant?.phoneNumber || "N/A",
+    tableNumbers: restaurantData?.restaurant?.tableNumbers || "N/A",
+    categories: restaurantData?.restaurant?.categories || [],
+    gstNumber: restaurantData?.restaurant?.gstNumber || "N/A",
+    gstRate: restaurantData?.restaurant?.gstRate || 0,
+    gstEnabled: restaurantData?.restaurant?.gstEnabled || false,
+  };
 
   const downloadQRCode = () => {
     if (profileData.qrCode) {
@@ -773,43 +633,48 @@ const Profile = () => {
     }
   };
 
-  // This function will be called by the modal on successful update
   const handleUpdateSuccess = () => {
-    setIsUpdateModalOpen(false); // Close the modal
-    setTriggerRefetch((prev) => prev + 1); // Increment to trigger the useEffect
+    setIsUpdateModalOpen(false);
+    refetch(); // Refetch data after successful update
   };
 
-  if (loading && triggerRefetch === 0) {
-    // Only show full-page spinner on initial load
-    return <LoadingSpinner />;
+  // Loading and Error States
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
   }
 
-  if (error && !profileData.restaurantName) {
-    // Only show full-page error if no data is loaded
-    return <ErrorMessage error={error} />;
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-lg border border-red-200 text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-3">
+            Error Loading Profile
+          </h2>
+          <p className="text-gray-700">
+            {error?.data?.message || "An unknown error occurred."}
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <>
-      <div className=" bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className=" mx-auto">
+      <div className="bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto">
           {/* Page Header */}
           <div className="mb-8 flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
                 {profileData.restaurantName}
               </h1>
-              {/* Show a mini-loader during refetch */}
-              {loading && triggerRefetch > 0 && (
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-sm text-gray-600">Updating...</span>
-                </div>
-              )}
-              {/* Show error inline if data is already present */}
-              {error && triggerRefetch > 0 && (
-                <p className="text-sm text-red-600 mt-2">{error}</p>
-              )}
             </div>
             <div>
               <Button onClick={() => setIsUpdateModalOpen(true)}>
@@ -820,9 +685,9 @@ const Profile = () => {
 
           {/* Main Content: Two-Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* --- LEFT COLUMN (2/3 width) --- */}
+            {/* Left Column (2/3 width) */}
             <div className="lg:col-span-2 space-y-8">
-              {/* Card 1: Admin Account */}
+              {/* Admin Account Card */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200">
                 <div className="p-6 border-b border-gray-200">
                   <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
@@ -844,7 +709,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Card 2: Restaurant Details */}
+              {/* Restaurant Details Card */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200">
                 <div className="p-6 border-b border-gray-200">
                   <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
@@ -855,7 +720,6 @@ const Profile = () => {
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="md:col-span-2">
                     <ProfileField
-                      className="w-64"
                       label="Full Address"
                       value={profileData.address}
                       icon="📍"
@@ -881,7 +745,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Card 3: Financial Settings */}
+              {/* Financial Settings Card */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200">
                 <div className="p-6 border-b border-gray-200">
                   <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
@@ -911,9 +775,9 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* --- RIGHT COLUMN (1/3 width) --- */}
+            {/* Right Column (1/3 width) */}
             <div className="lg:col-span-1 space-y-8">
-              {/* Card 1: Logo */}
+              {/* Logo Card */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200">
                 <div className="p-6 border-b border-gray-200">
                   <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
@@ -936,7 +800,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Card 2: Categories */}
+              {/* Categories Card */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200">
                 <div className="p-6 border-b border-gray-200">
                   <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
@@ -949,7 +813,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Card 3: QR Code */}
+              {/* QR Code Card */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200">
                 <div className="p-6 border-b border-gray-200">
                   <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
@@ -987,9 +851,7 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* This is where the modal is rendered. 
-        It's outside the main layout, controlled by `isUpdateModalOpen`.
-      */}
+      {/* Update Profile Modal */}
       <AnimatePresence>
         {isUpdateModalOpen && (
           <UpdateProfile

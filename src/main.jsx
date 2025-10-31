@@ -9,7 +9,7 @@ import Admin from "./pages/Admin";
 import AdminLayout from "./layouts/AdminLayout";
 import Menu from "./components/admin/Menu/Menu.jsx";
 import { Provider } from "react-redux";
-import { store } from "./store";
+import store from "./redux/store"; // ✅ fixed import (no curly braces)
 import OrdersList from "./components/admin/order/OrdersList.jsx";
 import Filter from "./components/Client/Filter";
 import LoginPage from "./components/admin/LoginPage";
@@ -28,14 +28,14 @@ import UserListPage from "./components/superAdmin/Pages/UserListPage";
 import AdminsList from "./components/superAdmin/details/User_List/AdminsList";
 import SuperAdminLayout from "./layouts/SuperAdminLayout";
 import SuperAdminProfile from "./components/superAdmin/Pages/SuperAdminProfile";
+import SuperAdminPrivateRoute from "./components/superAdmin/common/SuperAdminPrivateRoute"; // ✅ added
+import { ToastProvider } from "@/hooks/use-toast"
 
-const SuperAdminPrivateRoute = ({ children }) => {
-  return children;
-};
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
     <BrowserRouter>
+     <ToastProvider>
       <AppTitle />
       <Routes>
         {/* Public Routes */}
@@ -85,12 +85,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="user-list" element={<UserListPage />} />
           <Route path="admins" element={<AdminsList />} />
           <Route path="profile" element={<SuperAdminProfile />} />
-
         </Route>
 
         {/* 404 Error */}
         <Route path="*" element={<ErrorPage />} />
       </Routes>
+      </ToastProvider>
     </BrowserRouter>
   </Provider>
 );

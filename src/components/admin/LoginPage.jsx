@@ -1,51 +1,62 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { useLoginMutation } from "@/redux/adminRedux/adminAPI";
+import { setCredentials, setError, clearError } from "@/redux/adminRedux/adminSlice";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import config from "../../config";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
+  
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  
+  // Use RTK Query mutation
+  const [login, { isLoading }] = useLoginMutation();
+  
+  // Get error from Redux store
+  const { error } = useSelector((state) => state.admin);
+
+  useEffect(() => {
+    // Clear any existing errors when component mounts
+    dispatch(clearError());
+  }, [dispatch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    dispatch(clearError());
 
     try {
+      // Use RTK Query mutation for login
+      const result = await login({ email, password }).unwrap();
       
-      const response = await fetch(`${config.BASE_URL}/api/auth/login`,
-         {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      if (result.token) {
+        // Dispatch to Redux store
+        dispatch(setCredentials({
+          token: result.token,
+          name: result.name || "Admin",
+          email: result.email || email,
+          restaurantName: result.restaurantName || "",
+          qrCode: result.qrCode || ""
+        }));
 
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("userName", data.name || "Admin");
-        localStorage.setItem("userEmail", data.email || email);
-        localStorage.setItem("restaurantName", data.restaurantName || "");
-        localStorage.setItem("qrCode", data.qrCode || "");
+        // Also store in localStorage for persistence
+        localStorage.setItem("token", result.token);
+        localStorage.setItem("userName", result.name || "Admin");
+        localStorage.setItem("userEmail", result.email || email);
+        localStorage.setItem("restaurantName", result.restaurantName || "");
+        localStorage.setItem("qrCode", result.qrCode || "");
         localStorage.setItem("userPassword", password);
 
         navigate("/admin", { replace: true });
-      } else {
-        setError(data.message || "Login failed, please try again.");
       }
     } catch (err) {
-      setError("Something went wrong, please try again later.");
-    } finally {
-      setLoading(false);
+      // Handle error from RTK Query
+      const errorMessage = err?.data?.message || "Login failed, please try again.";
+      dispatch(setError(errorMessage));
     }
   };
 
@@ -112,10 +123,10 @@ const LoginPage = () => {
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={isLoading}
                 className="w-full mt-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg shadow-md"
               >
-                {loading ? "Logging in..." : "Login"}
+                {isLoading ? "Logging in..." : "Login"}
               </Button>
             </form>
           </CardContent>

@@ -1,9 +1,7 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
-import { useMenu } from "../hooks/useMenu";
-import { useRestaurant } from "../hooks/useRestaurant";
+import { useGetMenuQuery, useGetRestaurantQuery } from "../redux/clientRedux/clientAPI";
 import Header from "@/components/Client/Header";
 import Filter from "@/components/Client/Filter";
 import Category from "@/components/Client/Category";
@@ -12,13 +10,8 @@ import Copywright from "@/components/Client/Copywright";
 import loader from "@/assets/loader.gif";
 
 export default function Home() {
-  const { data: menuData, loading: menuLoading, error: menuError } = useMenu();
-  const {
-    data: restaurantData,
-    loading: restaurantLoading,
-    error: restaurantError,
-  } = useRestaurant();
-  
+  const { data: menuData, isLoading: menuLoading, error: menuError } = useGetMenuQuery();
+  const { data: restaurantData, isLoading: restaurantLoading, error: restaurantError } = useGetRestaurantQuery();
 
   const [showLoader, setShowLoader] = useState(true);
   const [filters, setFilters] = useState({ veg: false, nonVeg: false });
@@ -26,7 +19,6 @@ export default function Home() {
   const [total, setTotal] = useState(0);
   const [activeCategory, setActiveCategory] = useState(null);
 
-  // Combine both loading states
   const loading = menuLoading || restaurantLoading;
   const error = menuError || restaurantError;
 
@@ -35,28 +27,22 @@ export default function Home() {
     if (loading) {
       setShowLoader(true);
     } else {
-      timer = setTimeout(() => {
-        setShowLoader(false);
-      }, 2000);
+      timer = setTimeout(() => setShowLoader(false), 2000);
     }
     return () => clearTimeout(timer);
   }, [loading]);
 
   if (showLoader)
     return (
-      <div className="flex justify-center items-center max-h-screen min-h-screen bg-white">
+      <div className="flex justify-center items-center min-h-screen bg-white">
         <img src={loader} alt="Loading..." className="h-60" />
       </div>
     );
 
-  if (error) return <p>Error: {error}</p>;
+  if (error) return <p>Error fetching data.</p>;
 
-  const restaurant = restaurantData || {};
-  const menu = Array.isArray(menuData)
-    ? menuData
-    : Array.isArray(menuData?.menu)
-    ? menuData.menu
-    : [];
+  const restaurant = restaurantData?.restaurant || {};
+  const menu = Array.isArray(menuData?.menu) ? menuData.menu : [];
 
   // Apply filters (search + veg/non-veg + category)
   const filteredMenu = menu.filter((item) => {
@@ -64,11 +50,9 @@ export default function Home() {
       item.name.toLowerCase().includes(search.toLowerCase()) ||
       item.description.toLowerCase().includes(search.toLowerCase());
     if (!matchesSearch) return false;
-
     if (filters.veg && !filters.nonVeg && item.type !== "veg") return false;
     if (filters.nonVeg && !filters.veg && item.type !== "non-veg") return false;
     if (activeCategory && item.category !== activeCategory) return false;
-
     return true;
   });
 
@@ -82,10 +66,10 @@ export default function Home() {
 
   return (
     <>
-      <div className="sticky top-0 bg-white z-20 border-b shadow-sm ">
+      <div className="sticky top-0 bg-white z-20 border-b shadow-sm">
         <Header
-          logo={restaurantData.restaurant?.logo?.url}
-          siteName={restaurantData.restaurant?.restaurantName}
+          logo={restaurant.logo?.url}
+          siteName={restaurant.restaurantName}
           search={search}
           onSearch={setSearch}
         />
@@ -97,7 +81,9 @@ export default function Home() {
           activeCategory={activeCategory}
         />
       </div>
+
       <FoodListing menu={filteredMenu} onQuantityChange={setTotal} />
+      {/* <Copywright /> */}
     </>
   );
 }
